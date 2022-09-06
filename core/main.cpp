@@ -26,11 +26,11 @@ int main(int nargs, const char *argv[]) {
     cout << "File byte length: " << contents.length() << endl;
     cout << endl << "======================================" << endl;
 
-    Lexer lexer(contents);
+    lexer::Lexer lexer(contents);
     lexer.tokenize();
     printf("Finished Tokenization\n");
     for (auto tok : lexer.getTokens()) {
-      cout << tok.type << endl;
+      cout << (int)tok.type << endl;
     }
   } else {
     cout << "ERROR: File \"" << argv[0] << "\" does not exist" << endl;

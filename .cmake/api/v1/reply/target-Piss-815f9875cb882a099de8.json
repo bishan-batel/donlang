@@ -20,7 +20,6 @@
 		"files" : 
 		[
 			"core/CMakeLists.txt",
-			"lexer/CMakeLists.txt",
 			"/usr/lib/cmake/llvm/LLVMExports.cmake",
 			"/usr/lib64/cmake/llvm/LLVMConfig.cmake",
 			"CMakeLists.txt"
@@ -43,66 +42,57 @@
 				"parent" : 0
 			},
 			{
-				"file" : 1
-			},
-			{
-				"command" : 1,
-				"file" : 1,
-				"line" : 10,
-				"parent" : 3
-			},
-			{
-				"file" : 4
+				"file" : 3
 			},
 			{
 				"command" : 4,
-				"file" : 4,
+				"file" : 3,
 				"line" : 4,
-				"parent" : 5
+				"parent" : 3
 			},
 			{
-				"file" : 3,
-				"parent" : 6
+				"file" : 2,
+				"parent" : 4
 			},
 			{
 				"command" : 3,
-				"file" : 3,
+				"file" : 2,
 				"line" : 315,
+				"parent" : 5
+			},
+			{
+				"file" : 1,
+				"parent" : 6
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 120,
 				"parent" : 7
 			},
 			{
-				"file" : 2,
-				"parent" : 8
-			},
-			{
 				"command" : 2,
-				"file" : 2,
-				"line" : 120,
-				"parent" : 9
-			},
-			{
-				"command" : 2,
-				"file" : 2,
+				"file" : 1,
 				"line" : 92,
-				"parent" : 9
+				"parent" : 7
 			},
 			{
 				"command" : 2,
-				"file" : 2,
+				"file" : 1,
 				"line" : 358,
-				"parent" : 9
+				"parent" : 7
 			},
 			{
 				"command" : 2,
-				"file" : 2,
+				"file" : 1,
 				"line" : 68,
-				"parent" : 9
+				"parent" : 7
 			},
 			{
 				"command" : 5,
-				"file" : 4,
+				"file" : 3,
 				"line" : 14,
-				"parent" : 5
+				"parent" : 3
 			}
 		]
 	},
@@ -112,19 +102,19 @@
 			"defines" : 
 			[
 				{
-					"backtrace" : 14,
+					"backtrace" : 12,
 					"define" : "_GNU_SOURCE"
 				},
 				{
-					"backtrace" : 14,
+					"backtrace" : 12,
 					"define" : "__STDC_CONSTANT_MACROS"
 				},
 				{
-					"backtrace" : 14,
+					"backtrace" : 12,
 					"define" : "__STDC_FORMAT_MACROS"
 				},
 				{
-					"backtrace" : 14,
+					"backtrace" : 12,
 					"define" : "__STDC_LIMIT_MACROS"
 				}
 			],
@@ -132,7 +122,7 @@
 			[
 				{
 					"backtrace" : 2,
-					"path" : "/home/bishan/CLionProjects/LangTest"
+					"path" : "/home/bishan/CLionProjects/DonLang"
 				}
 			],
 			"language" : "CXX",
@@ -146,11 +136,11 @@
 	[
 		{
 			"backtrace" : 2,
-			"id" : "lexer::@b843ee4d2567e712e3c6"
+			"id" : "utils::@c810615cce0f7acb82dc"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "utils::@c810615cce0f7acb82dc"
+			"id" : "lexer::@b843ee4d2567e712e3c6"
 		}
 	],
 	"id" : "Piss::@57760688d1f824db5d9c",
@@ -169,6 +159,11 @@
 			},
 			{
 				"backtrace" : 2,
+				"fragment" : "../utils/libutils.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
 				"fragment" : "/usr/lib/libLLVMSupport.a",
 				"role" : "libraries"
 			},
@@ -183,17 +178,12 @@
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 4,
-				"fragment" : "../utils/libutils.a",
-				"role" : "libraries"
-			},
-			{
-				"backtrace" : 10,
+				"backtrace" : 8,
 				"fragment" : "/usr/lib/libLLVMAsmParser.a",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 10,
+				"backtrace" : 8,
 				"fragment" : "/usr/lib/libLLVMBitReader.a",
 				"role" : "libraries"
 			},
@@ -203,17 +193,17 @@
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 11,
+				"backtrace" : 9,
 				"fragment" : "/usr/lib/libLLVMBinaryFormat.a",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 11,
+				"backtrace" : 9,
 				"fragment" : "/usr/lib/libLLVMRemarks.a",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 12,
+				"backtrace" : 10,
 				"fragment" : "/usr/lib/libLLVMBitstreamReader.a",
 				"role" : "libraries"
 			},
@@ -223,32 +213,32 @@
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 13,
+				"backtrace" : 11,
 				"fragment" : "-lrt",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 13,
+				"backtrace" : 11,
 				"fragment" : "-ldl",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 13,
+				"backtrace" : 11,
 				"fragment" : "-lm",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 13,
+				"backtrace" : 11,
 				"fragment" : "/usr/lib/libz.so",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 13,
+				"backtrace" : 11,
 				"fragment" : "/usr/lib/libtinfo.so",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 13,
+				"backtrace" : 11,
 				"fragment" : "/usr/lib/libLLVMDemangle.a",
 				"role" : "libraries"
 			}

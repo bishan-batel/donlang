@@ -1,9 +1,10 @@
 #pragma once
 
+#include "token.h"
 #include <string>
 #include <vector>
-#include "token.h"
 
+namespace lexer {
 class Lexer {
 private:
   std::string src;
@@ -18,6 +19,7 @@ private:
   bool identifier();
   bool comment();
   bool stringliteral();
+  bool operator_();
 
 public:
   Lexer(std::string input);
@@ -27,3 +29,4 @@ public:
   std::vector<Token> getTokens();
   int getTokenCount();
 };
+}; // namespace lexer

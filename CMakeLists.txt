@@ -15,6 +15,6 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 
 llvm_map_components_to_libnames(llvm_libs support core irreader)
 
+add_subdirectory(utils)
 add_subdirectory(lexer)
 add_subdirectory(core)
-add_subdirectory(utils)

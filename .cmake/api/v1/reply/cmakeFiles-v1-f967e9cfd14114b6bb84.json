@@ -242,20 +242,20 @@
 			"path" : "/usr/lib/cmake/llvm/LLVM-Config.cmake"
 		},
 		{
+			"path" : "utils/CMakeLists.txt"
+		},
+		{
 			"path" : "lexer/CMakeLists.txt"
 		},
 		{
 			"path" : "core/CMakeLists.txt"
-		},
-		{
-			"path" : "utils/CMakeLists.txt"
 		}
 	],
 	"kind" : "cmakeFiles",
 	"paths" : 
 	{
-		"build" : "/home/bishan/CLionProjects/LangTest",
-		"source" : "/home/bishan/CLionProjects/LangTest"
+		"build" : "/home/bishan/CLionProjects/DonLang",
+		"source" : "/home/bishan/CLionProjects/DonLang"
 	},
 	"version" : 
 	{

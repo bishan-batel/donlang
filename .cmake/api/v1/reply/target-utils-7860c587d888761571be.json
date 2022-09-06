@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "lexer/liblexer.a"
+			"path" : "utils/libutils.a"
 		}
 	],
 	"backtrace" : 1,
@@ -12,13 +12,12 @@
 		"commands" : 
 		[
 			"add_library",
-			"target_link_libraries",
 			"add_definitions",
 			"target_include_directories"
 		],
 		"files" : 
 		[
-			"lexer/CMakeLists.txt",
+			"utils/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -33,24 +32,18 @@
 				"parent" : 0
 			},
 			{
-				"command" : 1,
-				"file" : 0,
-				"line" : 10,
-				"parent" : 0
-			},
-			{
 				"file" : 1
 			},
 			{
-				"command" : 2,
+				"command" : 1,
 				"file" : 1,
 				"line" : 14,
-				"parent" : 3
+				"parent" : 2
 			},
 			{
-				"command" : 3,
+				"command" : 2,
 				"file" : 0,
-				"line" : 9,
+				"line" : 7,
 				"parent" : 0
 			}
 		]
@@ -61,68 +54,58 @@
 			"defines" : 
 			[
 				{
-					"backtrace" : 4,
+					"backtrace" : 3,
 					"define" : "_GNU_SOURCE"
 				},
 				{
-					"backtrace" : 4,
+					"backtrace" : 3,
 					"define" : "__STDC_CONSTANT_MACROS"
 				},
 				{
-					"backtrace" : 4,
+					"backtrace" : 3,
 					"define" : "__STDC_FORMAT_MACROS"
 				},
 				{
-					"backtrace" : 4,
+					"backtrace" : 3,
 					"define" : "__STDC_LIMIT_MACROS"
 				}
 			],
 			"includes" : 
 			[
 				{
-					"backtrace" : 5,
-					"path" : "/home/bishan/CLionProjects/LangTest"
+					"backtrace" : 4,
+					"path" : "/home/bishan/CLionProjects/DonLang"
 				}
 			],
 			"language" : "CXX",
 			"sourceIndexes" : 
 			[
-				1,
-				3
+				0
 			]
 		}
 	],
-	"dependencies" : 
-	[
-		{
-			"backtrace" : 2,
-			"id" : "utils::@c810615cce0f7acb82dc"
-		}
-	],
-	"id" : "lexer::@b843ee4d2567e712e3c6",
-	"name" : "lexer",
-	"nameOnDisk" : "liblexer.a",
+	"id" : "utils::@c810615cce0f7acb82dc",
+	"name" : "utils",
+	"nameOnDisk" : "libutils.a",
 	"paths" : 
 	{
-		"build" : "lexer",
-		"source" : "lexer"
+		"build" : "utils",
+		"source" : "utils"
 	},
 	"sourceGroups" : 
 	[
 		{
-			"name" : "Header Files",
-			"sourceIndexes" : 
-			[
-				0,
-				2
-			]
-		},
-		{
 			"name" : "Source Files",
 			"sourceIndexes" : 
 			[
-				1,
-				3
+				0
+			]
+		},
+		{
+			"name" : "Header Files",
+			"sourceIndexes" : 
+			[
+				1
 			]
 		}
 	],
@@ -130,24 +113,13 @@
 	[
 		{
 			"backtrace" : 1,
-			"path" : "lexer/lexer.h",
+			"compileGroupIndex" : 0,
+			"path" : "utils/stringutils.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "lexer/lexer.cpp",
-			"sourceGroupIndex" : 1
-		},
-		{
-			"backtrace" : 1,
-			"path" : "lexer/token.h",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "lexer/token.cpp",
+			"path" : "utils/stringutils.h",
 			"sourceGroupIndex" : 1
 		}
 	],

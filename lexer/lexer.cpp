@@ -1,11 +1,11 @@
 #include "lexer.h"
 #include "token.h"
-#include <cctype>
-#include <cstdio>
 #include <iostream>
 #include <string>
+#include <utils/stringutils.h>
 
 using namespace std;
+namespace lexer {
 Lexer::Lexer(string input) : src(input) {}
 
 // Index Control
@@ -36,6 +36,9 @@ void Lexer::tokenize() {
     if (identifier())
       continue;
 
+    if (operator_())
+      continue;
+
     nextChar();
   }
   printf("EOF\n");
@@ -43,7 +46,45 @@ void Lexer::tokenize() {
   printf("EOF2\n");
 }
 
-bool Lexer::identifier() { return false; }
+bool Lexer::operator_() {
+  Operator op = char_to_op(currentChar());
+  if (op != op_invalid) {
+    nextChar();
+    Token tok(tok_op);
+    tok.u8 = op;
+    tokens.push_back(tok);
+    return true;
+  }
+  return false;
+}
+
+bool Lexer::identifier() {
+  if (!utils::is_alpha(currentChar()))
+    return false;
+  prevChar();
+
+  string ident;
+
+  while (nextChar() != EOF) {
+    if (!utils::is_alphanumeric(currentChar()))
+      break;
+    ident.push_back(currentChar());
+  }
+
+  Keyword keyword = string_to_keyword(ident);
+  if (keyword == keyword_invalid) {
+    Token tok(tok_keyword);
+    tok.u8 = keyword;
+    tokens.push_back(tok);
+  } else {
+    cout << "Identifier: \"" << ident << '\"' << endl;
+    Token tok(tok_identifier);
+    tok.str = ident;
+    tokens.push_back(tok);
+  }
+
+  return true;
+}
 
 bool Lexer::comment() {
   // comments
@@ -60,14 +101,16 @@ bool Lexer::stringliteral() {
   }
 
   int start = idx + 1;
+  int length = 0;
 
   while (nextChar() != EOF && currentChar() != '\"') {
+    length++;
   }
   nextChar();
 
   // printf("B3\n");
   Token tok(tok_strliteral);
-  tok.str = src.substr(start, idx - 1);
+  tok.str = src.substr(start, length);
 
   tokens.push_back(tok);
   return true;
@@ -75,3 +118,4 @@ bool Lexer::stringliteral() {
 
 int Lexer::getTokenCount() { return tokenCount; }
 vector<Token> Lexer::getTokens() { return tokens; }
+}; // namespace lexer
