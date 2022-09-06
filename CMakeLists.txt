@@ -18,3 +18,6 @@ llvm_map_components_to_libnames(llvm_libs support core irreader)
 add_subdirectory(utils)
 add_subdirectory(lexer)
 add_subdirectory(core)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # does not produce the json file
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "") # works
