@@ -4,6 +4,8 @@
 
 "bruh"
 
-def a = b * c + b
-
 # "huh bruh moment"
+
+def main() {
+	print(bruh)
+}
