@@ -19,7 +19,7 @@ private:
   bool identifier();
   bool comment();
   bool stringliteral();
-  bool operator_();
+  bool op();
 
 public:
   Lexer(std::string input);

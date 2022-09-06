@@ -36,7 +36,7 @@ void Lexer::tokenize() {
     if (identifier())
       continue;
 
-    if (operator_())
+    if (op())
       continue;
 
     nextChar();
@@ -46,7 +46,7 @@ void Lexer::tokenize() {
   printf("EOF2\n");
 }
 
-bool Lexer::operator_() {
+bool Lexer::op() {
   Operator op = char_to_op(currentChar());
   if (op != op_invalid) {
     nextChar();

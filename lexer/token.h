@@ -8,7 +8,6 @@ enum TokenType : char {
   tok_eof = -1,
   tok_identifier,
   tok_keyword,
-  tok_def,
   tok_strliteral,
   tok_op
 };
