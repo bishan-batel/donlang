@@ -1,52 +1,45 @@
 #include "token.h"
+#include <iostream>
 #include <string>
+#include <tuple>
 
 namespace lexer {
+
 Token::Token(TokenType type) : type(type) {}
+string Token::name() const { return "NULL Token"; }
 
-// Operators
-bool const Token::operator==(const Token &obj) { return type == obj.type; }
+EOFToken::EOFToken() : Token(tok_eof) {}
+string EOFToken::name() const { return "EOF"; }
 
-bool const Token::operator!=(const Token &obj) { return !(*this == obj); }
+IdentifierToken::IdentifierToken(string ident)
+    : Token(tok_identifier), ident(ident) {}
+string IdentifierToken::name() const { return ident; }
 
-#define branch(c, o)                                                           \
-  case c:                                                                      \
-    return o;
-Operator char_to_op(char c) {
-
-  // macros bc i miss rust and their nice macros
-  // also makes the code look cleaner
-
-  switch (c) {
-    branch('(', op_openparen);
-    branch(')', op_closeparen);
-    branch('{', op_opencurly);
-    branch('}', op_closecurly);
-    branch('[', op_openbracket);
-    branch(']', op_closebracket);
-    branch('+', op_plus);
-    branch('-', op_minus);
-    branch('/', op_div);
-    branch('=', op_eq);
-    branch('|', op_pipe);
-    branch('^', op_caret);
-    branch('&', op_ampersand);
-    branch('!', op_not);
-    branch('%', op_mod);
-  default:
-    return op_invalid;
+KeywordToken::KeywordToken(Keyword type) : Token(tok_keyword), word(type) {}
+string KeywordToken::name() const {
+  for (auto keyword : KEYWORD_MAP) {
+    if (get<1>(keyword) == word) {
+      return get<0>(keyword);
+    }
   }
+  return "[NULL Keyword]";
 }
 
-Keyword string_to_keyword(string str) {
-#define ifbranch(c, t)                                                         \
-  if (str == c)                                                                \
-    return t;
+StringLiteralToken::StringLiteralToken(string str)
+    : Token(tok_strliteral), literal(str) {}
+string StringLiteralToken::name() const { return literal; }
 
-  ifbranch("def", keyword_def);
-  ifbranch("def", keyword_def);
-
-  return keyword_invalid;
+OperatorToken::OperatorToken(Operator op) : Token(tok_op), op(op) {}
+string OperatorToken::name() const {
+  for (auto op : OPERATOR_MAP) {
+    if (get<1>(op) == this->op) {
+      return get<0>(op);
+    }
+  }
+  return "NULL Operator";
 }
 
+F64Literal::F64Literal(double f) : Token(tok_number), literal(f) {}
+
+string F64Literal::name() const { return to_string(literal) + "f"; }
 }; // namespace lexer

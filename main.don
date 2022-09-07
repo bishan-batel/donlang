@@ -1,11 +1,7 @@
-# bruh moment
+# main method (args parameter optional)
 
-# huh
 
-"bruh"
+val i: int = 0;
 
-# "huh bruh moment"
 
-def main() {
-	print(bruh)
-}
+def squared(n: f32) = n * 2.04

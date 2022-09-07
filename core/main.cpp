@@ -5,6 +5,7 @@
 #include <lexer/lexer.h>
 #include <sstream>
 #include <string>
+#include <utils/stringutils.h>
 
 using namespace std;
 
@@ -29,9 +30,12 @@ int main(int nargs, const char *argv[]) {
     lexer::Lexer lexer(contents);
     lexer.tokenize();
     printf("Finished Tokenization\n");
-    for (auto tok : lexer.getTokens()) {
-      cout << (int)tok.type << endl;
+    auto tokens = lexer.getTokens();
+    cout << "Tokens: " << endl;
+    for (auto tok : tokens) {
+      cout << tok->name() << ' ' << endl;
     }
+    cout << endl;
   } else {
     cout << "ERROR: File \"" << argv[0] << "\" does not exist" << endl;
     return 1;

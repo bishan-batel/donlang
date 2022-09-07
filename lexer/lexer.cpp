@@ -6,7 +6,14 @@
 
 using namespace std;
 namespace lexer {
-Lexer::Lexer(string input) : src(input) {}
+Lexer::Lexer(string input) : src(input), idx(0) {}
+
+Lexer::~Lexer() {
+  for (auto tok : tokens) {
+    delete tok;
+  }
+  tokens.clear();
+}
 
 // Index Control
 char Lexer::currentChar() {
@@ -26,8 +33,18 @@ char Lexer::prevChar() {
 // Tokenizer Functions
 void Lexer::tokenize() {
   while (currentChar() != EOF) {
+    if (utils::is_whitespace(currentChar())) {
+      nextChar();
+      continue;
+    }
 
     if (comment())
+      continue;
+
+    if (keyword())
+      continue;
+
+    if (numberliteral())
       continue;
 
     if (stringliteral())
@@ -39,21 +56,46 @@ void Lexer::tokenize() {
     if (op())
       continue;
 
-    nextChar();
+    cerr << "Invalid Character: '" << currentChar() << "'" << endl;
+    throw -1;
   }
-  printf("EOF\n");
-  tokens.push_back(Token(tok_eof));
-  printf("EOF2\n");
+  tokens.push_back(new EOFToken());
 }
 
 bool Lexer::op() {
-  Operator op = char_to_op(currentChar());
-  if (op != op_invalid) {
-    nextChar();
-    Token tok(tok_op);
-    tok.u8 = op;
-    tokens.push_back(tok);
-    return true;
+  int src_len = src.size();
+  for (auto operator_t : OPERATOR_MAP) {
+    auto op_str = get<0>(operator_t);
+    auto len = op_str.size();
+
+    if (idx + len >= src_len)
+      continue;
+
+    auto substr = src.substr(idx, len);
+    if (substr == op_str) {
+      tokens.push_back(new OperatorToken(get<1>(operator_t)));
+      idx += len;
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Lexer::keyword() {
+  int src_len = src.size();
+  for (auto keyword : KEYWORD_MAP) {
+    auto word = get<0>(keyword);
+    auto len = word.size();
+
+    if (idx + len >= src_len)
+      continue;
+
+    auto substr = src.substr(idx, len);
+    if (substr == word && !utils::is_whitespace(src.at(idx + len))) {
+      tokens.push_back(new KeywordToken(get<1>(keyword)));
+      idx += len;
+      return true;
+    }
   }
   return false;
 }
@@ -61,38 +103,54 @@ bool Lexer::op() {
 bool Lexer::identifier() {
   if (!utils::is_alpha(currentChar()))
     return false;
-  prevChar();
 
-  string ident;
-
-  while (nextChar() != EOF) {
-    if (!utils::is_alphanumeric(currentChar()))
-      break;
-    ident.push_back(currentChar());
+  int start = idx;
+  int length = 1;
+  while (nextChar() != EOF && utils::is_alphanumeric(currentChar())) {
+    length++;
   }
 
-  Keyword keyword = string_to_keyword(ident);
-  if (keyword == keyword_invalid) {
-    Token tok(tok_keyword);
-    tok.u8 = keyword;
-    tokens.push_back(tok);
-  } else {
-    cout << "Identifier: \"" << ident << '\"' << endl;
-    Token tok(tok_identifier);
-    tok.str = ident;
-    tokens.push_back(tok);
-  }
+  string ident = src.substr(start, length);
+  tokens.push_back(new IdentifierToken(ident));
 
   return true;
 }
 
 bool Lexer::comment() {
-  // comments
-  if (currentChar() == '#') {
-    while (nextChar() != '\n' && currentChar() != EOF) {
-    }
+  if (currentChar() != '#')
+    return false;
+
+  while (nextChar() != EOF && currentChar() != '\n') {
   }
-  return false;
+  idx++;
+  return true;
+}
+
+bool Lexer::numberliteral() {
+  if (!utils::is_numeric(currentChar())) {
+    return false;
+  };
+  idx--;
+
+  int length = 1;
+  int start = idx;
+
+  bool decimal;
+
+  char c;
+  while (utils::is_numeric(c = nextChar()) || c == '.') {
+    if (c == '.') {
+      if (decimal)
+        break;
+      else
+        decimal = true;
+    }
+    length++;
+  }
+  double val = stod(src.substr(start, start + length));
+
+  tokens.push_back(new F64Literal(val));
+  return true;
 }
 
 bool Lexer::stringliteral() {
@@ -106,16 +164,12 @@ bool Lexer::stringliteral() {
   while (nextChar() != EOF && currentChar() != '\"') {
     length++;
   }
-  nextChar();
+  idx++;
 
-  // printf("B3\n");
-  Token tok(tok_strliteral);
-  tok.str = src.substr(start, length);
-
-  tokens.push_back(tok);
+  tokens.push_back(new StringLiteralToken(src.substr(start, length)));
   return true;
 }
 
 int Lexer::getTokenCount() { return tokenCount; }
-vector<Token> Lexer::getTokens() { return tokens; }
+vector<const Token *> Lexer::getTokens() { return tokens; }
 }; // namespace lexer
