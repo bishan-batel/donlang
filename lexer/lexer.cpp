@@ -41,9 +41,6 @@ void Lexer::tokenize() {
     if (comment())
       continue;
 
-    if (keyword())
-      continue;
-
     if (numberliteral())
       continue;
 
@@ -62,43 +59,7 @@ void Lexer::tokenize() {
   tokens.push_back(new EOFToken());
 }
 
-bool Lexer::op() {
-  int src_len = src.size();
-  for (auto operator_t : OPERATOR_MAP) {
-    auto op_str = get<0>(operator_t);
-    auto len = op_str.size();
-
-    if (idx + len >= src_len)
-      continue;
-
-    auto substr = src.substr(idx, len);
-    if (substr == op_str) {
-      tokens.push_back(new OperatorToken(get<1>(operator_t)));
-      idx += len;
-      return true;
-    }
-  }
-  return false;
-}
-
-bool Lexer::keyword() {
-  int src_len = src.size();
-  for (auto keyword : KEYWORD_MAP) {
-    auto word = get<0>(keyword);
-    auto len = word.size();
-
-    if (idx + len >= src_len)
-      continue;
-
-    auto substr = src.substr(idx, len);
-    if (substr == word && !utils::is_whitespace(src.at(idx + len))) {
-      tokens.push_back(new KeywordToken(get<1>(keyword)));
-      idx += len;
-      return true;
-    }
-  }
-  return false;
-}
+bool Lexer::op() { return false; }
 
 bool Lexer::identifier() {
   if (!utils::is_alpha(currentChar()))
@@ -111,7 +72,13 @@ bool Lexer::identifier() {
   }
 
   string ident = src.substr(start, length);
-  tokens.push_back(new IdentifierToken(ident));
+
+  auto keyword = KEYWORD_MAP.find(ident);
+  if (keyword != KEYWORD_MAP.end()) {
+    tokens.push_back(new KeywordToken(keyword->second));
+  } else {
+    tokens.push_back(new IdentifierToken(ident));
+  }
 
   return true;
 }
@@ -128,12 +95,12 @@ bool Lexer::comment() {
 
 bool Lexer::numberliteral() {
   if (!utils::is_numeric(currentChar())) {
+
     return false;
   };
-  idx--;
 
   int length = 1;
-  int start = idx;
+  int start = idx - 1;
 
   bool decimal;
 
@@ -173,3 +140,4 @@ bool Lexer::stringliteral() {
 int Lexer::getTokenCount() { return tokenCount; }
 vector<const Token *> Lexer::getTokens() { return tokens; }
 }; // namespace lexer
+   //

@@ -39,7 +39,7 @@ string OperatorToken::name() const {
   return "NULL Operator";
 }
 
-F64Literal::F64Literal(double f) : Token(tok_number), literal(f) {}
+F64Literal::F64Literal(double f) : Token(tok_double), literal(f) {}
 
 string F64Literal::name() const { return to_string(literal) + "f"; }
 }; // namespace lexer

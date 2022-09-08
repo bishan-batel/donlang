@@ -1,7 +1,8 @@
 # main method (args parameter optional)
 
+def main() {
+	print("huh")
 
-val i: int = 0;
-
-
-def squared(n: f32) = n * 2.04
+	var a = 0
+	a += 2
+}

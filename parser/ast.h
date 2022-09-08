@@ -36,7 +36,29 @@ public:
 };
 
 class CallExpression : public Expression {
+  string name;
   vector<unique_ptr<Expression>> args;
+
+public:
+  CallExpression(string name, vector<unique_ptr<Expression>> args);
+};
+
+class FunctionPrototype {
+  string name;
+  vector<string> args;
+
+public:
+  FunctionPrototype(string name, vector<string> args);
+  const string getName() const;
+};
+
+class Function {
+  unique_ptr<FunctionPrototype> proto;
+  unique_ptr<Expression> body;
+
+  public:
+  Function(unique_ptr<FunctionPrototype> proto, unique_ptr<Expression> body);
 };
 
 }; // namespace ast
+  

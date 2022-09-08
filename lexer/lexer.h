@@ -16,7 +16,6 @@ private:
   char prevChar();
   char nextChar();
 
-  bool keyword();
   bool identifier();
   bool comment();
   bool stringliteral();
