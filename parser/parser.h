@@ -27,6 +27,7 @@ class Parser {
   unique_ptr<ast::Expression> parse_expression();
   unique_ptr<ast::Expression> parse_expression_add();
   unique_ptr<ast::Expression> parse_expression_mul();
+  unique_ptr<ast::Expression> parse_expression_eq();
   unique_ptr<ast::Expression> parse_exppression_factor();
   unique_ptr<ast::Expression> parse_expression_paren();
 

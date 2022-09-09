@@ -2,5 +2,17 @@
 
 
 def main() {
-	bruh
+	let a = 0
+
+	# lol moment
+	let b = 4
+
+
+	let sum = (b + 5) * 0 + c + 3 * 3 
+
+	# gamer
+
+	let variable = "bruh moment"
+
+	print("bruh moment")
 }

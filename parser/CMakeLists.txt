@@ -7,4 +7,4 @@ add_library(
 )
 
 target_include_directories(parser PUBLIC "${CMAKE_SOURCE_DIR}")
-target_link_libraries(parser PUBLIC utils lexer)
+target_link_libraries(parser PUBLIC ${llvm_libs} utils lexer )

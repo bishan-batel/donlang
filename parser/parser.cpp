@@ -59,12 +59,12 @@ unique_ptr<ast::Function> Parser::parse_function() {
   while (!is_op(lexer::op_closecurly)) {
     unique_ptr<ast::Expression> expr = nullptr;
 
-    if ((expr = parse_var_def()) == nullptr) {
+    if ((expr = parse_var_def()) != nullptr) {
       body.push_back(move(expr));
       continue;
     }
 
-    if ((expr = parse_expression()) == nullptr) {
+    if ((expr = parse_expression()) != nullptr) {
       body.push_back(move(expr));
       continue;
     }
@@ -80,6 +80,7 @@ unique_ptr<ast::Expression> Parser::parse_var_def() {
   if (!is_keyword(lexer::keyword_let)) {
     return nullptr;
   }
+  advance();
 
   if (!is_curr(lexer::tok_identifier)) {
     throw "Expected variable name, found '" + string(*currTok) + '\'';
@@ -88,6 +89,7 @@ unique_ptr<ast::Expression> Parser::parse_var_def() {
   auto ident = ((lexer::IdentifierToken *)currTok)->ident;
   advance();
   if (is_op(lexer::op_eq)) {
+    advance();
     return make_unique<ast::VariableDefinition>(ident, parse_expression());
   } else {
     err_unexpected_tok("=");
@@ -103,8 +105,8 @@ unique_ptr<ast::Expression> Parser::parse_expression_add() {
   auto node = parse_expression_mul();
 
   while (is_op(lexer::op_plus) || is_op(lexer::op_minus)) {
-    advance();
     auto op = ((OperatorToken *)currTok)->op;
+    advance();
     node = make_unique<ast::BinaryExpresion>(op, move(node),
                                              parse_expression_mul());
   }
@@ -115,16 +117,67 @@ unique_ptr<ast::Expression> Parser::parse_expression_mul() {
   auto node = parse_exppression_factor();
 
   while (is_op(lexer::op_mul) || is_op(lexer::op_div) || is_op(lexer::op_mod)) {
-    advance();
     auto op = ((OperatorToken *)currTok)->op;
+    advance();
     node = make_unique<ast::BinaryExpresion>(op, move(node),
                                              parse_exppression_factor());
   }
   return node;
 }
 
+unique_ptr<ast::Expression> Parser::parse_expression_eq() {
+  auto node = parse_expression_paren();
+
+  while (is_op(lexer::op_eq)) {
+    auto op = ((OperatorToken *)currTok)->op;
+    advance();
+    node = make_unique<ast::BinaryExpresion>(op, move(node),
+                                             parse_expression_paren());
+  }
+  return node;
+}
+
 unique_ptr<ast::Expression> Parser::parse_exppression_factor() {
-  return nullptr;
+  if (is_curr(lexer::tok_double)) {
+    auto val = ((lexer::F64Literal *)currTok)->literal;
+    advance();
+    return make_unique<ast::NumberExpression>(val);
+  } else if (is_curr(lexer::tok_strliteral)) {
+    auto val = ((lexer::StringLiteralToken *)currTok)->literal;
+    advance();
+    return make_unique<ast::StringExpression>(val);
+  } else if (is_curr(lexer::tok_identifier)) {
+    auto val = ((lexer::IdentifierToken *)currTok)->ident;
+    advance();
+
+    if (!is_op(lexer::op_openparen)) {
+      return make_unique<ast::VariableExpression>(val);
+    }
+
+    advance();
+    vector<unique_ptr<ast::Expression>> args;
+
+    while (!is_op(lexer::op_closeparen)) {
+      args.push_back(parse_expression());
+      if (is_op(lexer::op_comma)) {
+        advance();
+      }
+    }
+
+    advance();
+    return make_unique<ast::CallExpression>(val, move(args));
+  } else if (is_op(lexer::op_openparen)) {
+    advance();
+    auto expr = parse_expression();
+    if (!is_op(lexer::op_closeparen)) {
+      err_unexpected_tok(")");
+    }
+    advance();
+    return expr;
+  } else {
+    err_unexpected_tok("expression");
+    return nullptr;
+  }
 }
 
 unique_ptr<ast::Prototype> Parser::parse_prototype() {
@@ -171,7 +224,7 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
       valtype = ast::primitive_char;
       break;
     default:
-      throw string("Unknown type: ") + string(*currTok);
+      throw "Unknown type: " + string(*currTok);
     }
 
     args.push_back(make_tuple(argname, valtype));
@@ -192,8 +245,13 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
 }
 
 void Parser::parse() {
-  auto proto = parse_function();
-  cout << (string(*proto.get())) << endl;
+  try {
+    auto proto = parse_function();
+    cout << "Finished Parsing" << endl;
+    cout << (string(*proto.get())) << endl;
+  } catch (string err) {
+    cout << "[PARSER ERROR]: " << err << endl;
+  }
 }
 
 }; // namespace parser
