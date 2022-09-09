@@ -53,13 +53,24 @@ void Lexer::tokenize() {
     if (op())
       continue;
 
-    cerr << "Invalid Character: '" << currentChar() << "'" << endl;
-    throw -1;
+    // cerr << "Invalid Character: '" << currentChar() << "'" << endl;
+    throw string("Unexpected Character '") + currentChar() + '\'';
+    // throw -1;
   }
   tokens.push_back(new EOFToken());
 }
 
-bool Lexer::op() { return false; }
+bool Lexer::op() {
+  auto op = OPERATOR_MAP.find(currentChar());
+
+  if (op != OPERATOR_MAP.end()) {
+    tokens.push_back(new OperatorToken(op->second));
+    idx++;
+    return true;
+  }
+
+  return false;
+}
 
 bool Lexer::identifier() {
   if (!utils::is_alpha(currentChar()))
@@ -138,6 +149,6 @@ bool Lexer::stringliteral() {
 }
 
 int Lexer::getTokenCount() { return tokenCount; }
-vector<const Token *> Lexer::getTokens() { return tokens; }
+vector<Token *> Lexer::getTokens() { return tokens; }
 }; // namespace lexer
    //

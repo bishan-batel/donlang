@@ -5,18 +5,23 @@
 
 namespace lexer {
 
+bool is_operator_char(char c) {
+  auto op = OPERATOR_MAP.find(c);
+  return op != OPERATOR_MAP.end();
+}
+
 Token::Token(TokenType type) : type(type) {}
-string Token::name() const { return "NULL Token"; }
+Token::operator string() const { return "NULL Token"; }
 
 EOFToken::EOFToken() : Token(tok_eof) {}
-string EOFToken::name() const { return "EOF"; }
+EOFToken::operator string() const { return "EOF"; }
 
 IdentifierToken::IdentifierToken(string ident)
     : Token(tok_identifier), ident(ident) {}
-string IdentifierToken::name() const { return ident; }
+IdentifierToken::operator string() const { return ident; }
 
 KeywordToken::KeywordToken(Keyword type) : Token(tok_keyword), word(type) {}
-string KeywordToken::name() const {
+KeywordToken::operator string() const {
   for (auto keyword : KEYWORD_MAP) {
     if (get<1>(keyword) == word) {
       return get<0>(keyword);
@@ -27,13 +32,13 @@ string KeywordToken::name() const {
 
 StringLiteralToken::StringLiteralToken(string str)
     : Token(tok_strliteral), literal(str) {}
-string StringLiteralToken::name() const { return literal; }
+StringLiteralToken::operator string() const { return "\"" + literal + "\""; }
 
 OperatorToken::OperatorToken(Operator op) : Token(tok_op), op(op) {}
-string OperatorToken::name() const {
-  for (auto op : OPERATOR_MAP) {
-    if (get<1>(op) == this->op) {
-      return get<0>(op);
+OperatorToken::operator string() const {
+  for (auto &p : OPERATOR_MAP) {
+    if (p.second == op) {
+      return string(1, p.first);
     }
   }
   return "NULL Operator";
@@ -41,5 +46,5 @@ string OperatorToken::name() const {
 
 F64Literal::F64Literal(double f) : Token(tok_double), literal(f) {}
 
-string F64Literal::name() const { return to_string(literal) + "f"; }
+F64Literal::operator string() const { return to_string(literal) + "f"; }
 }; // namespace lexer

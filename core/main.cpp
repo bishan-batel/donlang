@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <lexer/lexer.h>
+#include <parser/parser.h>
 #include <sstream>
 #include <string>
 #include <utils/stringutils.h>
@@ -31,11 +32,15 @@ int main(int nargs, const char *argv[]) {
     lexer.tokenize();
     printf("Finished Tokenization\n");
     auto tokens = lexer.getTokens();
+
     cout << "Tokens: " << endl;
     for (auto tok : tokens) {
-      cout << tok->name() << ' ' << endl;
+      cout << string(*tok) << ' ';
     }
     cout << endl;
+
+    parser::Parser(tokens).parse();
+
   } else {
     cout << "ERROR: File \"" << argv[0] << "\" does not exist" << endl;
     return 1;

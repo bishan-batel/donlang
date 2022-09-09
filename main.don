@@ -1,8 +1,6 @@
 # main method (args parameter optional)
 
-def main() {
-	print("huh")
 
-	var a = 0
-	a += 2
+def main() {
+	bruh
 }

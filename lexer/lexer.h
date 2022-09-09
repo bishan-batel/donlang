@@ -9,7 +9,7 @@ class Lexer {
 private:
   std::string src;
   int tokenCount;
-  std::vector<const Token*> tokens;
+  std::vector<Token *> tokens;
   int idx;
 
   char currentChar();
@@ -28,7 +28,10 @@ public:
 
   void tokenize();
 
-  std::vector<const Token*> getTokens();
+  std::vector<Token *> getTokens();
   int getTokenCount();
 };
+
+// ERROR
 }; // namespace lexer
+   //
