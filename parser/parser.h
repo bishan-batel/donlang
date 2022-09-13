@@ -1,7 +1,7 @@
 #pragma once
 #include "ast.h"
-#include "lexer/token.h"
 #include <iostream>
+#include <lexer/token.h>
 
 using namespace std;
 using namespace lexer;
@@ -17,25 +17,27 @@ class Parser {
 
   bool is_curr(TokenType);
   bool is_keyword(Keyword);
-  bool is_op(Operator);
+  bool is_op(lexer::Operator);
 
   Token *advance();
   unique_ptr<ast::Prototype> parse_prototype();
-  unique_ptr<ast::Function> parse_function();
+  unique_ptr<ast::Expression> parse_function();
+  unique_ptr<ast::Expression> parse_extern();
   unique_ptr<ast::Expression> parse_var_def();
+  unique_ptr<ast::Expression> parse_return();
 
   unique_ptr<ast::Expression> parse_expression();
   unique_ptr<ast::Expression> parse_expression_add();
   unique_ptr<ast::Expression> parse_expression_mul();
   unique_ptr<ast::Expression> parse_expression_eq();
   unique_ptr<ast::Expression> parse_exppression_factor();
-  unique_ptr<ast::Expression> parse_expression_paren();
 
-  void err_unexpected_tok(string expected);
+  void err_unexpected_tok(const string& expected);
 
 public:
   Parser(vector<Token *> tokens);
 
-  void parse();
+  vector<unique_ptr<ast::Expression>> parse();
 };
+
 }; // namespace parser

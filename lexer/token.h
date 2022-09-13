@@ -17,15 +17,17 @@ enum Keyword : char {
   keyword_void,
   keyword_var,
   keyword_let,
+  keyword_string,
   keyword_extern
 };
 
 static const map<string, Keyword> KEYWORD_MAP{
-    {"def", keyword_def},   {"return", keyword_return},
-    {"i32", keyword_i32},   {"f32", keyword_f32},
-    {"f64", keyword_f64},   {"char", keyword_char},
-    {"void", keyword_void}, {"var", keyword_var},
-    {"let", keyword_let},   {"extern", keyword_extern}};
+    {"def", keyword_def},      {"return", keyword_return},
+    {"i32", keyword_i32},      {"f32", keyword_f32},
+    {"f64", keyword_f64},      {"char", keyword_char},
+    {"void", keyword_void},    {"var", keyword_var},
+    {"let", keyword_let},      {"extern", keyword_extern},
+    {"string", keyword_string}};
 
 enum Operator : char {
   op_invalid = -1,

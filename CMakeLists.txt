@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.23.1)
 project(donlang VERSION 1.0.0)
 
+set(CMAKE_CXX_STANDARD_17)
 find_package(LLVM REQUIRED CONFIG)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
@@ -17,6 +18,7 @@ llvm_map_components_to_libnames(llvm_libs support core irreader)
 
 add_subdirectory(utils)
 add_subdirectory(lexer)
+add_subdirectory(jit)
 add_subdirectory(parser)
 add_subdirectory(core)
 

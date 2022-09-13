@@ -1,18 +1,20 @@
 # main method (args parameter optional)
 
 
-def main() {
-	let a = 0
+extern printf(msg: string)
+extern scanf(scanstr: string, ptr: i32): string
 
-	# lol moment
-	let b = 4
-
-
-	let sum = (b + 5) * 0 + c + 3 * 3 
-
-	# gamer
-
-	let variable = "bruh moment"
-
-	print("bruh moment")
+def squared(num: f32): void {
+	let val = num * num
+	return val
 }
+
+def main() {
+	printf("Hello World")
+
+	let input = 0
+	scanf("%d", input)
+
+	return squared(input)
+}
+

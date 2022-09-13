@@ -1,6 +1,9 @@
 #pragma once
+
 #include "lexer/token.h"
+#include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
 #include <llvm/IR/Value.h>
 #include <memory>
 #include <string>
@@ -10,32 +13,53 @@
 using namespace std;
 using namespace llvm;
 
-namespace parser {
-namespace ast {
+namespace codegen {
 
+class CGContext {
+public:
+  unique_ptr<LLVMContext> *llvm;
+  unique_ptr<IRBuilder<>> *builder;
+  unique_ptr<Module> *module;
+  // named variables
+  map<string, Value *> namedValues;
+
+  explicit CGContext(unique_ptr<LLVMContext> &, unique_ptr<IRBuilder<>> &,
+                     unique_ptr<Module> &);
+};
+}; // namespace codegen
+
+namespace parser {
+
+namespace ast {
 class Expression {
 public:
   virtual ~Expression() = default;
-  virtual operator string() const;
-  virtual Value *codegen(LLVMContext &ctx) = 0;
+
+  virtual explicit operator string() const;
+
+  virtual Value *codegen(codegen::CGContext &ctx) = 0;
 };
 
 class NumberExpression : public Expression {
   double value;
 
 public:
-  NumberExpression(double val);
-  operator string() const override;
-  Value *codegen(LLVMContext &ctx) override;
+  explicit NumberExpression(double val);
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
 };
 
 class StringExpression : public Expression {
   string value;
 
 public:
-  StringExpression(string val);
-  operator string() const override;
-  Value *codegen(LLVMContext &ctx) override;
+  explicit StringExpression(string val);
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
 };
 
 class VariableDefinition : public Expression {
@@ -44,17 +68,21 @@ class VariableDefinition : public Expression {
 
 public:
   VariableDefinition(string, unique_ptr<Expression>);
-  operator string() const override;
-  Value *codegen(LLVMContext &ctx) override;
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
 };
 
 class VariableExpression : public Expression {
   string name;
 
 public:
-  VariableExpression(string name);
-  operator string() const override;
-  Value *codegen(LLVMContext &ctx) override;
+  explicit VariableExpression(string name);
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
 };
 
 class BinaryExpresion : public Expression {
@@ -64,8 +92,21 @@ class BinaryExpresion : public Expression {
 public:
   BinaryExpresion(lexer::Operator op, unique_ptr<Expression> lhs,
                   unique_ptr<Expression> rhs);
-  operator string() const override;
-  Value *codegen(LLVMContext &ctx) override;
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
+};
+
+class ReturnExpression : public Expression {
+  unique_ptr<Expression> expr;
+
+public:
+  ReturnExpression(unique_ptr<Expression>);
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
 };
 
 class CallExpression : public Expression {
@@ -74,16 +115,20 @@ class CallExpression : public Expression {
 
 public:
   CallExpression(string name, vector<unique_ptr<Expression>> args);
-  operator string() const override;
-  Value *codegen(LLVMContext &ctx) override;
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
 };
 
 enum Primitive : char {
+  primitive_void = -1,
   primitive_f32,
   primitive_f64,
   primitive_i32,
   primitive_i64,
   primitive_char,
+  primitive_string,
 };
 
 /**
@@ -91,24 +136,46 @@ enum Primitive : char {
  */
 
 class Prototype {
-  string name;
-  vector<tuple<string, Primitive>> args;
-
 public:
-  Prototype(string name, vector<tuple<string, Primitive>> args);
-  const string getName() const;
-  operator string() const;
+  string name;
+  Primitive returntype;
+  vector<tuple<string, Primitive>> args;
+  Prototype(string name, Primitive returntype,
+            vector<tuple<string, Primitive>> args);
+
+  ~Prototype();
+
+  string getName() const;
+
+  explicit operator string() const;
+
+  llvm::Function *codegen(codegen::CGContext &ctx);
 };
 
-class Function {
+class Function : public Expression {
+public:
   unique_ptr<Prototype> proto;
   vector<unique_ptr<Expression>> body;
 
-public:
   Function(unique_ptr<Prototype> proto, vector<unique_ptr<Expression>> body);
-  operator string() const;
-  Value *codegen(LLVMContext &ctx);
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
 };
+
+class ExternFunction : public Expression {
+  unique_ptr<Prototype> proto;
+
+public:
+  explicit ExternFunction(unique_ptr<Prototype> proto);
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
+};
+
+llvm::Type *primitive_to_type(codegen::CGContext &ctx, Primitive prim);
 
 }; // namespace ast
 

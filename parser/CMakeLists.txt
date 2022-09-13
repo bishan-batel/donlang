@@ -4,6 +4,8 @@ add_library(
   parser.cpp
   ast.h
   ast.cpp
+  scope.h
+  scope.cpp
 )
 
 target_include_directories(parser PUBLIC "${CMAKE_SOURCE_DIR}")
