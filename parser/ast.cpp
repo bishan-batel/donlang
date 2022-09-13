@@ -39,16 +39,34 @@ namespace ast {
 Expression::operator string() const { return "NULL Expression"; }
 
 /**
- * Number Expression
+ * Number Expressions
  */
-NumberExpression::NumberExpression(double val) : value(val) {}
 
-NumberExpression::operator string() const { return to_string(value); }
+// Doubles
+NumberF64Expression::NumberF64Expression(double val) : value(val) {}
 
-Value *NumberExpression::codegen(codegen::CGContext &ctx) {
-  // return ConstantFP::get(ctx.ctx, APFloat(value));
-  //
+NumberF64Expression::operator string() const { return to_string(value); }
+
+Value *NumberF64Expression::codegen(codegen::CGContext &ctx) {
   return ConstantFP::get(**ctx.llvm, APFloat(value));
+}
+
+// Floats
+NumberF32Expression::NumberF32Expression(float val) : value(val) {}
+
+NumberF32Expression::operator string() const { return to_string(value); }
+
+Value *NumberF32Expression::codegen(codegen::CGContext &ctx) {
+  return ConstantFP::get(**ctx.llvm, APFloat(value));
+}
+
+// Integer (32 bit)
+NumberI32Expression::NumberI32Expression(int val) : value(val) {}
+
+NumberI32Expression::operator string() const { return to_string(value); }
+
+Value *NumberI32Expression::codegen(codegen::CGContext &ctx) {
+  return ConstantInt::get(**ctx.llvm, APInt(32, value, true));
 }
 
 /**
@@ -157,6 +175,10 @@ Value *BinaryExpresion::codegen(codegen::CGContext &ctx) {
     return BinaryOperator::CreateFDiv(lhs_val, rhs_val, "divtmp");
   case lexer::op_mod:
     return BinaryOperator::CreateFRem(lhs_val, rhs_val, "modtmp");
+  case lexer::op_greater_than:
+    return ctx.builder->get()->CreateFCmpUGT(lhs_val, rhs_val, "gttmp");
+  case lexer::op_less_than:
+    return ctx.builder->get()->CreateFCmpULT(lhs_val, rhs_val, "lttmp");
   case lexer::op_eq:
     // check of lhs is a variable expression
     if (auto var = dynamic_cast<VariableExpression *>(lhs.get())) {
@@ -240,6 +262,10 @@ llvm::Type *primitive_to_type(codegen::CGContext &ctx, Primitive prim) {
     return Type::getInt64Ty(**ctx.llvm);
   case Primitive::primitive_i32:
     return Type::getInt32Ty(**ctx.llvm);
+  case Primitive::primitive_bool:
+    return Type::getInt1Ty(**ctx.llvm);
+  default:
+    throw string("Invalid primitive type");
   }
 }
 
@@ -254,6 +280,7 @@ llvm::Function *Prototype::codegen(codegen::CGContext &ctx) {
       FunctionType::get(primitive_to_type(ctx, returntype), arg_types, false);
   auto func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage,
                                      name, *ctx.module->get());
+
   int idx = 0;
   for (auto &arg : func->args()) {
     arg.setName(get<0>(args[idx]));

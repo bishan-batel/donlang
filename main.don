@@ -15,6 +15,13 @@ def main() {
 	let input = 0
 	scanf("%d", input)
 
+	if input > 0 {
+		printf("Input is positive")
+	} else {
+		printf("Input is negative")
+	}
+
+	#var a = 0
+
 	return squared(input)
 }
-

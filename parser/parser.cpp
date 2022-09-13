@@ -124,7 +124,19 @@ unique_ptr<ast::Expression> Parser::parse_var_def() {
 }
 
 unique_ptr<ast::Expression> Parser::parse_expression() {
-  return parse_expression_eq();
+  return parse_expression_compare();
+}
+
+unique_ptr<ast::Expression> Parser::parse_expression_compare() {
+  auto node = parse_expression_eq();
+
+  while (is_op(lexer::op_greater_than) || is_op(lexer::op_less_than)) {
+    auto op = ((OperatorToken *)currTok)->op;
+    advance();
+    node = make_unique<ast::BinaryExpresion>(op, std::move(node),
+                                             parse_expression_eq());
+  }
+  return node;
 }
 
 unique_ptr<ast::Expression> Parser::parse_expression_eq() {
@@ -167,7 +179,7 @@ unique_ptr<ast::Expression> Parser::parse_exppression_factor() {
   if (is_curr(lexer::tok_double)) {
     auto val = ((lexer::F64Literal *)currTok)->literal;
     advance();
-    return make_unique<ast::NumberExpression>(val);
+    return make_unique<ast::NumberF64Expression>(val);
   } else if (is_curr(lexer::tok_strliteral)) {
     auto val = ((lexer::StringLiteralToken *)currTok)->literal;
     advance();

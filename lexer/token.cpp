@@ -46,5 +46,14 @@ OperatorToken::operator string() const {
 
 F64Literal::F64Literal(double f) : Token(tok_double), literal(f) {}
 
-F64Literal::operator string() const { return to_string(literal) + "f"; }
+F64Literal::operator string() const { return to_string(literal) + "d"; }
+
+F32Literal::F32Literal(float f) : Token(tok_float), literal(f) {}
+
+F32Literal::operator string() const { return to_string(literal) + "f"; }
+
+I32Literal::I32Literal(int i) : Token(tok_int), literal(i) {}
+
+I32Literal::operator string() const { return to_string(literal); }
+
 }; // namespace lexer

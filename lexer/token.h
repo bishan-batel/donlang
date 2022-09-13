@@ -18,7 +18,8 @@ enum Keyword : char {
   keyword_var,
   keyword_let,
   keyword_string,
-  keyword_extern
+  keyword_extern,
+  keyword_if
 };
 
 static const map<string, Keyword> KEYWORD_MAP{
@@ -27,7 +28,7 @@ static const map<string, Keyword> KEYWORD_MAP{
     {"f64", keyword_f64},      {"char", keyword_char},
     {"void", keyword_void},    {"var", keyword_var},
     {"let", keyword_let},      {"extern", keyword_extern},
-    {"string", keyword_string}};
+    {"string", keyword_string}, {"if", keyword_invalid}};
 
 enum Operator : char {
   op_invalid = -1,
@@ -50,22 +51,23 @@ enum Operator : char {
   op_colon,
   op_dot,
   op_comma,
+  op_greater_than,
+  op_less_than,
 };
 
-static const int MAX_OPERATOR_LENGTH = 2;
 static const map<char, Operator> OPERATOR_MAP{
-    {'(', op_openparen},  {')', op_closeparen},  {'{', op_opencurly},
-    {'}', op_closecurly}, {'[', op_openbracket}, {']', op_closebracket},
-    {'+', op_plus},       {'-', op_minus},       {'/', op_div},
-    {'=', op_eq},         {'*', op_mul},         {'|', op_pipe},
-    {'^', op_caret},      {'&', op_ampersand},   {'!', op_not},
-    {'%', op_mod},        {':', op_colon},       {'.', op_dot},
-    {',', op_comma}};
+    {'(', op_openparen},  {')', op_closeparen},   {'{', op_opencurly},
+    {'}', op_closecurly}, {'[', op_openbracket},  {']', op_closebracket},
+    {'+', op_plus},       {'-', op_minus},        {'/', op_div},
+    {'=', op_eq},         {'*', op_mul},          {'|', op_pipe},
+    {'^', op_caret},      {'&', op_ampersand},    {'!', op_not},
+    {'%', op_mod},        {':', op_colon},        {'.', op_dot},
+    {',', op_comma},      {'>', op_greater_than}, {'<', op_less_than}};
 
 bool is_operator_char(char c);
 
 enum TokenType : char {
-  tok_eof = -1,
+  tok_eof = EOF,
   tok_identifier,
   tok_keyword,
   tok_strliteral,
@@ -73,6 +75,7 @@ enum TokenType : char {
   tok_double,
   tok_int,
   tok_char,
+  tok_float,
 };
 class Token {
 
@@ -120,6 +123,20 @@ class F64Literal : public Token {
 public:
   F64Literal(double literal);
   double literal;
+  operator string() const override;
+};
+
+class F32Literal : public Token {
+public:
+  F32Literal(float literal);
+  float literal;
+  operator string() const override;
+};
+
+class I32Literal : public Token {
+public:
+  I32Literal(int literal);
+  int literal;
   operator string() const override;
 };
 }; // namespace lexer

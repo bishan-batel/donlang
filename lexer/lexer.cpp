@@ -125,9 +125,19 @@ bool Lexer::numberliteral() {
     }
     length++;
   }
-  double val = stod(src.substr(start, start + length));
 
-  tokens.push_back(new F64Literal(val));
+  if (!decimal) {
+    tokens.push_back(new F64Literal(stod(src.substr(start, start + length))));
+    return true;
+  }
+
+  switch (currentChar()) {
+  case 'f':
+  default:
+    tokens.push_back(new F64Literal(stod(src.substr(start, start + length))));
+    break;
+  }
+
   return true;
 }
 

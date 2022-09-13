@@ -40,11 +40,36 @@ public:
   virtual Value *codegen(codegen::CGContext &ctx) = 0;
 };
 
-class NumberExpression : public Expression {
+// Double Expression
+class NumberF64Expression : public Expression {
   double value;
 
 public:
-  explicit NumberExpression(double val);
+  explicit NumberF64Expression(double val);
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
+};
+
+// Float Expression
+class NumberF32Expression : public Expression {
+  float value;
+
+public:
+  explicit NumberF32Expression(float val);
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
+};
+
+// Integer Expression
+class NumberI32Expression : public Expression {
+  int value;
+
+public:
+  explicit NumberI32Expression(int val);
 
   explicit operator string() const override;
 
@@ -65,6 +90,7 @@ public:
 class VariableDefinition : public Expression {
   string name;
   unique_ptr<Expression> expression;
+  bool mut;
 
 public:
   VariableDefinition(string, unique_ptr<Expression>);
@@ -129,6 +155,8 @@ enum Primitive : char {
   primitive_i64,
   primitive_char,
   primitive_string,
+  primitive_bool,
+  primitive_struct,
 };
 
 /**
