@@ -228,6 +228,65 @@ Value *CallExpression::codegen(codegen::CGContext &ctx) {
 }
 
 /**
+ * If Expression
+ */
+
+IfExpression::IfExpression(unique_ptr<Expression> cond,
+                           unique_ptr<Expression> then_expr,
+                           unique_ptr<Expression> else_expr)
+    : condition(std::move(cond)), then(std::move(then_expr)),
+      otherwise(std::move(else_expr)) {}
+
+IfExpression::operator string() const {
+  auto str = "if (" + string(*condition) + ") then (" + string(*then) + ")";
+  if (otherwise != nullptr) {
+    str += " else (" + string(*otherwise) + ")";
+  }
+  return str;
+}
+
+Value *IfExpression::codegen(codegen::CGContext &ctx) {
+  Value *cond = condition->codegen(ctx);
+  if (cond == nullptr) {
+    throw runtime_error("Invalid if expression: condition is null");
+  }
+
+  // convert condition to a bool by comparing equal to 0.0
+  cond = ctx.builder->get()->CreateFCmpONE(
+      cond, ConstantFP::get(**ctx.llvm, APFloat(0.0)), "ifcond");
+
+  llvm::Function *func = ctx.builder->get()->GetInsertBlock()->getParent();
+
+  // create blocks for then and else
+  BasicBlock *then_block = BasicBlock::Create(**ctx.llvm, "then", func);
+  BasicBlock *else_block = BasicBlock::Create(**ctx.llvm, "else");
+  BasicBlock *merge_block = BasicBlock::Create(**ctx.llvm, "ifcont");
+
+  ctx.builder->get()->CreateCondBr(cond, then_block, else_block);
+
+  ctx.builder->get()->SetInsertPoint(then_block);
+
+  Value *then_val = then->codegen(ctx);
+  if (then_val == nullptr) {
+    throw runtime_error("Invalid if expression: then expression is null");
+  }
+
+  // create an unconditional branch to the merge block and insert it
+  ctx.builder->get()->CreateBr(merge_block);
+
+  then_block = ctx.builder->get()->GetInsertBlock();
+  func->getBasicBlockList().push_back(else_block);
+  ctx.builder->get()->SetInsertPoint(else_block);
+
+  Value *else_val = otherwise->codegen(ctx);
+  if (else_val == nullptr) {
+    throw runtime_error("Invalid if expression: else expression is null");
+  }
+
+  else_block ctx.builder->get().GetInesrtBlock();
+}
+
+/**
  * Function Prototype
  */
 Prototype::Prototype(string name, Primitive returntype,

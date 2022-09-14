@@ -159,6 +159,20 @@ enum Primitive : char {
   primitive_struct,
 };
 
+class IfExpression : public Expression {
+  unique_ptr<Expression> condition;
+  unique_ptr<Expression> then;
+  unique_ptr<Expression> otherwise;
+
+public:
+  IfExpression(unique_ptr<Expression> condition, unique_ptr<Expression> then,
+               unique_ptr<Expression> otherwise);
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
+};
+
 /**
  * NON EXPRESSIONS
  */
