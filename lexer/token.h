@@ -26,11 +26,11 @@ enum Keyword : char {
 static const map<string, Keyword> KEYWORD_MAP{
     {"def", keyword_def},       {"return", keyword_return},
     {"i32", keyword_i32},       {"f32", keyword_f32},
-    {"f64", keyword_f64},       {"char", keyword_char},
-    {"void", keyword_void},     {"var", keyword_var},
-    {"let", keyword_let},       {"extern", keyword_extern},
-    {"string", keyword_string}, {"if", keyword_if},
-    {"else", keyword_else}};
+    {"i8", keyword_char},       {"f64", keyword_f64},
+    {"char", keyword_char},     {"void", keyword_void},
+    {"var", keyword_var},       {"let", keyword_let},
+    {"extern", keyword_extern}, {"string", keyword_string},
+    {"if", keyword_if},         {"else", keyword_else}};
 
 enum Operator : char {
   op_invalid = -1,
@@ -141,4 +141,12 @@ public:
   int literal;
   operator string() const override;
 };
+
+class CharLiteral : public Token {
+public:
+  CharLiteral(char literal);
+  char literal;
+  operator string() const override;
+};
+
 }; // namespace lexer

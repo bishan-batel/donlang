@@ -19,6 +19,8 @@ private:
   bool identifier();
   bool comment();
   bool stringliteral();
+  char escape_char();
+  bool charliteral();
   bool numberliteral();
   bool op();
 

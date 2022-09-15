@@ -66,7 +66,16 @@ NumberI32Expression::NumberI32Expression(int val) : value(val) {}
 NumberI32Expression::operator string() const { return to_string(value); }
 
 Value *NumberI32Expression::codegen(codegen::CGContext &ctx) {
-  return ConstantInt::get(**ctx.llvm, APInt(32, value, true));
+  return ConstantInt::get(**ctx.llvm, APInt(8 * sizeof(int), value));
+}
+
+// Integer (8 bit)
+NumberI8Expression::NumberI8Expression(char val) : value(val) {}
+
+NumberI8Expression::operator string() const { return to_string(value); }
+
+Value *NumberI8Expression::codegen(codegen::CGContext &ctx) {
+  return ConstantInt::get(**ctx.llvm, APInt(8 * sizeof(char), value));
 }
 
 /**
@@ -77,7 +86,7 @@ StringExpression::StringExpression(string val) : value(std::move(val)) {}
 StringExpression::operator string() const { return '"' + (value) + '"'; }
 
 Value *StringExpression::codegen(codegen::CGContext &ctx) {
-  return ConstantDataArray::getString(**ctx.llvm, value);
+  return ctx.builder->get()->CreateGlobalStringPtr(value);
 }
 
 /**
@@ -88,11 +97,11 @@ VariableExpression::VariableExpression(string name) : name(std::move(name)) {}
 VariableExpression::operator string() const { return "variable[" + name + "]"; }
 
 Value *VariableExpression::codegen(codegen::CGContext &ctx) {
-  auto val = ctx.namedValues[name];
-  if (val == nullptr) {
-    throw string("Unknown variable used: '") + name + '\'';
+  Value *v = ctx.namedValues[name];
+  if (v == nullptr) {
+    throw runtime_error("Unknown variable name");
   }
-  return val;
+  return v;
 }
 
 /**
@@ -108,21 +117,29 @@ VariableDefinition::operator string() const {
 
 Value *VariableDefinition::codegen(codegen::CGContext &ctx) {
   // get double type
-  Type *doubleType = Type::getDoubleTy(**ctx.llvm);
+  //
 
-  // create variable
-  AllocaInst *variable =
-      ctx.builder->get()->CreateAlloca(doubleType, nullptr, name);
-
-  // store value
-  if (expression != nullptr) {
-    ctx.builder->get()->CreateStore(expression->codegen(ctx), variable);
+  if (expression == nullptr) {
+    throw string("Variable '") + name + "' is uninitialized";
   }
 
-  // add variable to named values
-  ctx.namedValues[name] = variable;
+  auto expr_val = expression->codegen(ctx);
 
-  return variable;
+  if (expr_val == nullptr) {
+    throw string("Variable '") + name + "' is uninitialized";
+  }
+
+  // allocate if string type
+  if (expr_val->getType() == Type::getInt8PtrTy(**ctx.llvm)) {
+    auto alloca =
+        ctx.builder->get()->CreateAlloca(expr_val->getType(), nullptr, name);
+    ctx.builder->get()->CreateStore(expr_val, alloca);
+    ctx.namedValues[name] = alloca;
+    return alloca;
+  }
+
+  ctx.namedValues[name] = expr_val;
+  return expr_val;
 }
 
 /**
@@ -153,8 +170,16 @@ BinaryExpresion::operator string() const {
 }
 
 Value *BinaryExpresion::codegen(codegen::CGContext &ctx) {
-  auto lhs_val = lhs->codegen(ctx);
-  auto rhs_val = rhs->codegen(ctx);
+  if (lhs == nullptr) {
+    throw runtime_error("LHS is null");
+  }
+  Value *lhs_val = lhs->codegen(ctx);
+
+  if (rhs == nullptr) {
+    return lhs_val;
+  }
+
+  Value *rhs_val = rhs->codegen(ctx);
 
   if (lhs_val == nullptr) {
     throw runtime_error("Invalid binary expression: lhs is null");
@@ -166,15 +191,15 @@ Value *BinaryExpresion::codegen(codegen::CGContext &ctx) {
 
   switch (op) {
   case lexer::op_plus:
-    return BinaryOperator::CreateFAdd(lhs_val, rhs_val, "addtmp");
+    return ctx.builder->get()->CreateAdd(lhs_val, rhs_val, "addtmp");
   case lexer::op_minus:
-    return BinaryOperator::CreateFSub(lhs_val, rhs_val, "subtmp");
+    return ctx.builder->get()->CreateSub(lhs_val, rhs_val, "subtmp");
   case lexer::op_mul:
-    return BinaryOperator::CreateFMul(lhs_val, rhs_val, "multmp");
+    return ctx.builder->get()->CreateMul(lhs_val, rhs_val, "multmp");
   case lexer::op_div:
-    return BinaryOperator::CreateFDiv(lhs_val, rhs_val, "divtmp");
+    return ctx.builder->get()->CreateFDiv(lhs_val, rhs_val, "divtmp");
   case lexer::op_mod:
-    return BinaryOperator::CreateFRem(lhs_val, rhs_val, "modtmp");
+    return ctx.builder->get()->CreateFRem(lhs_val, rhs_val, "modtmp");
   case lexer::op_greater_than:
     return ctx.builder->get()->CreateFCmpUGT(lhs_val, rhs_val, "gttmp");
   case lexer::op_less_than:
@@ -191,6 +216,7 @@ Value *BinaryExpresion::codegen(codegen::CGContext &ctx) {
     throw string("Invalid binary expression, operator not supported (" +
                  string(lexer::OperatorToken(op)) + ")");
   }
+  return nullptr;
 }
 
 /**
@@ -217,14 +243,22 @@ Value *CallExpression::codegen(codegen::CGContext &ctx) {
 
   // If argument mismatch error.
   if (func->arg_size() != args.size()) {
-    throw string("Incorrect # arguments passed");
+    throw runtime_error("Incorrect # arguments passed for function " + name);
   }
 
   vector<Value *> arg_vals;
-  for (auto &arg : args) {
-    arg_vals.push_back(arg->codegen(ctx));
+  for (unsigned i = 0, e = args.size(); i != e; ++i) {
+    arg_vals.push_back(args[i]->codegen(ctx));
+    if (!arg_vals.back()) {
+      throw runtime_error("Invalid argument passed to function");
+    }
   }
-  return ctx.builder->get()->CreateCall(func, arg_vals, "calltmp");
+
+  if (func->getReturnType()->isVoidTy()) {
+    return ctx.builder->get()->CreateCall(func, arg_vals);
+  } else {
+    return ctx.builder->get()->CreateCall(func, arg_vals, "calltmp");
+  }
 }
 
 /**
@@ -232,17 +266,25 @@ Value *CallExpression::codegen(codegen::CGContext &ctx) {
  */
 
 IfExpression::IfExpression(unique_ptr<Expression> cond,
-                           unique_ptr<Expression> then_expr,
-                           unique_ptr<Expression> else_expr)
+                           vector<unique_ptr<Expression>> then_expr,
+                           vector<unique_ptr<Expression>> else_expr)
     : condition(std::move(cond)), then(std::move(then_expr)),
       otherwise(std::move(else_expr)) {}
 
 IfExpression::operator string() const {
-  auto str = "if (" + string(*condition) + ") then (" + string(*then) + ")";
-  if (otherwise != nullptr) {
-    str += " else (" + string(*otherwise) + ")";
+  auto str = "if (" + string(*condition) + ") then (";
+
+  for (auto &expr : then) {
+    str += string(*expr);
   }
-  return str;
+
+  str += ") else (";
+
+  for (auto &expr : otherwise) {
+    str += string(*expr);
+  }
+
+  return str + ")";
 }
 
 Value *IfExpression::codegen(codegen::CGContext &ctx) {
@@ -259,6 +301,7 @@ Value *IfExpression::codegen(codegen::CGContext &ctx) {
 
   // create blocks for then and else
   BasicBlock *then_block = BasicBlock::Create(**ctx.llvm, "then", func);
+
   BasicBlock *else_block = BasicBlock::Create(**ctx.llvm, "else");
   BasicBlock *merge_block = BasicBlock::Create(**ctx.llvm, "ifcont");
 
@@ -266,7 +309,11 @@ Value *IfExpression::codegen(codegen::CGContext &ctx) {
 
   ctx.builder->get()->SetInsertPoint(then_block);
 
-  Value *then_val = then->codegen(ctx);
+  Value *then_val = nullptr;
+  for (auto &expr : then) {
+    then_val = expr->codegen(ctx);
+  }
+
   if (then_val == nullptr) {
     throw runtime_error("Invalid if expression: then expression is null");
   }
@@ -278,12 +325,24 @@ Value *IfExpression::codegen(codegen::CGContext &ctx) {
   func->getBasicBlockList().push_back(else_block);
   ctx.builder->get()->SetInsertPoint(else_block);
 
-  Value *else_val = otherwise->codegen(ctx);
-  if (else_val == nullptr) {
-    throw runtime_error("Invalid if expression: else expression is null");
+  Value *else_val = nullptr;
+  for (auto &expr : otherwise) {
+    else_val = expr->codegen(ctx);
   }
 
-  else_block ctx.builder->get().GetInesrtBlock();
+  ctx.builder->get()->CreateBr(merge_block);
+  else_block = ctx.builder->get()->GetInsertBlock();
+
+  func->getBasicBlockList().push_back(merge_block);
+  ctx.builder->get()->SetInsertPoint(merge_block);
+
+  PHINode *phi =
+      ctx.builder->get()->CreatePHI(Type::getDoubleTy(**ctx.llvm), 2, "iftmp");
+
+  return phi;
+  phi->addIncoming(then_val, then_block);
+  phi->addIncoming(else_val, else_block);
+  return phi;
 }
 
 /**
@@ -342,8 +401,7 @@ llvm::Function *Prototype::codegen(codegen::CGContext &ctx) {
 
   int idx = 0;
   for (auto &arg : func->args()) {
-    arg.setName(get<0>(args[idx]));
-    idx++;
+    arg.setName(get<0>(args[idx++]));
   }
 
   return func;
@@ -370,8 +428,6 @@ Function::operator string() const {
 }
 
 Value *Function::codegen(codegen::CGContext &ctx) {
-  cout << "Parsing Function" << endl;
-
   auto func = proto->codegen(ctx);
   if (func == nullptr) {
     return nullptr;
@@ -396,6 +452,9 @@ Value *Function::codegen(codegen::CGContext &ctx) {
     ctx.namedValues[arg.getName().str()] = nullptr;
   }
 
+  if (ctx.builder->get()->GetInsertBlock()->getTerminator() == nullptr) {
+    ctx.builder->get()->CreateRetVoid();
+  }
   return func;
 }
 
@@ -420,6 +479,8 @@ Value *ExternFunction::codegen(codegen::CGContext &ctx) {
 
   return func;
 }
+
+void add_default_functions(codegen::CGContext &ctx) {}
 
 } // namespace ast
 } // namespace parser

@@ -31,6 +31,9 @@ public:
 namespace parser {
 
 namespace ast {
+
+void add_default_functions(codegen::CGContext &ctx);
+
 class Expression {
 public:
   virtual ~Expression() = default;
@@ -70,6 +73,18 @@ class NumberI32Expression : public Expression {
 
 public:
   explicit NumberI32Expression(int val);
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
+};
+
+// I8/Char Expression
+class NumberI8Expression : public Expression {
+  char value;
+
+public:
+  explicit NumberI8Expression(char val);
 
   explicit operator string() const override;
 
@@ -161,12 +176,13 @@ enum Primitive : char {
 
 class IfExpression : public Expression {
   unique_ptr<Expression> condition;
-  unique_ptr<Expression> then;
-  unique_ptr<Expression> otherwise;
+  vector<unique_ptr<Expression>> then;
+  vector<unique_ptr<Expression>> otherwise;
 
 public:
-  IfExpression(unique_ptr<Expression> condition, unique_ptr<Expression> then,
-               unique_ptr<Expression> otherwise);
+  IfExpression(unique_ptr<Expression> condition,
+               vector<unique_ptr<Expression>> then,
+               vector<unique_ptr<Expression>> otherwise);
 
   explicit operator string() const override;
 

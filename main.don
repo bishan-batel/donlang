@@ -1,27 +1,16 @@
 # main method (args parameter optional)
 
 
-extern printf(msg: string)
-extern scanf(scanstr: string, ptr: i32): string
+extern cos(n: f64): f64
 
-def squared(num: f32): void {
-	let val = num * num
-	return val
+extern putchar(str: char): i32
+extern puts(str: string): i32
+extern printf(str: string): i32
+
+def main(): i32 {
+    printf("Bruh Moment\n")
+    #putchar('\n')
+    
+    return 69
 }
 
-def main() {
-	printf("Hello World")
-
-	let input = 0
-	scanf("%d", input)
-
-	if input > 0 {
-		printf("Input is positive")
-	} else {
-		printf("Input is negative")
-	}
-
-	#var a = 0
-
-	return squared(input)
-}

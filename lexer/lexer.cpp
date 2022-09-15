@@ -1,6 +1,7 @@
 #include "lexer.h"
 #include "token.h"
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <utils/stringutils.h>
 
@@ -47,6 +48,9 @@ void Lexer::tokenize() {
     if (stringliteral())
       continue;
 
+    if (charliteral())
+      continue;
+
     if (identifier())
       continue;
 
@@ -54,7 +58,8 @@ void Lexer::tokenize() {
       continue;
 
     // cerr << "Invalid Character: '" << currentChar() << "'" << endl;
-    throw string("Unexpected Character '") + currentChar() + '\'';
+    throw runtime_error(string("Unexpected Character '") + currentChar() +
+                        '\'');
     // throw -1;
   }
   tokens.push_back(new EOFToken());
@@ -111,7 +116,7 @@ bool Lexer::numberliteral() {
   };
 
   int length = 1;
-  int start = idx - 1;
+  int start = idx;
 
   bool decimal;
 
@@ -126,15 +131,28 @@ bool Lexer::numberliteral() {
     length++;
   }
 
-  if (!decimal) {
-    tokens.push_back(new F64Literal(stod(src.substr(start, start + length))));
-    return true;
-  }
+  auto substr = src.substr(start, start + length);
 
   switch (currentChar()) {
+  case 'd':
+    tokens.push_back(new F64Literal(stod(substr)));
+    nextChar();
+    break;
+
   case 'f':
+    tokens.push_back(new F32Literal(stof(substr)));
+    nextChar();
+    break;
+
+  case 'c':
+    tokens.push_back(new CharLiteral(stoi(substr)));
+    nextChar();
+    break;
+
+  case 'i':
+    nextChar();
   default:
-    tokens.push_back(new F64Literal(stod(src.substr(start, start + length))));
+    tokens.push_back(new I32Literal(stoi(substr)));
     break;
   }
 
@@ -146,15 +164,68 @@ bool Lexer::stringliteral() {
     return false;
   }
 
-  int start = idx + 1;
-  int length = 0;
-
+  string str;
   while (nextChar() != EOF && currentChar() != '\"') {
-    length++;
+    if (currentChar() == '\\') {
+      str += escape_char();
+      idx--;
+    } else {
+      str += currentChar();
+    }
   }
-  idx++;
+  nextChar();
 
-  tokens.push_back(new StringLiteralToken(src.substr(start, length)));
+  tokens.push_back(new StringLiteralToken(str));
+  return true;
+}
+
+char Lexer::escape_char() {
+  char c = currentChar();
+
+  if (c == '\\') {
+    nextChar();
+
+    c = currentChar();
+    nextChar();
+    switch (c) {
+    case 'n':
+      return '\n';
+    case 't':
+      return '\t';
+    case 'r':
+      return '\r';
+    case '0':
+      return '\0';
+    case '\'':
+      return '\'';
+    case '\\':
+      return '\\';
+    default:
+      throw runtime_error("Invalid escape sequence");
+    }
+  }
+  return c;
+}
+
+bool Lexer::charliteral() {
+  if (currentChar() != '\'') {
+    return false;
+  }
+
+  // read character literal until ' or EOF, parsing escape sequences
+  if (nextChar() == EOF) {
+    throw runtime_error("Invalid character literal");
+  }
+
+  char c = escape_char();
+
+  if (currentChar() != '\'') {
+    throw runtime_error("Expected ', found " + string(1, currentChar()));
+  }
+  nextChar();
+
+  tokens.push_back(new CharLiteral(c));
+
   return true;
 }
 

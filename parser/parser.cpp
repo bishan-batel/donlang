@@ -33,9 +33,9 @@ bool Parser::is_op(lexer::Operator op) {
   return is_curr(lexer::tok_op) && ((OperatorToken *)currTok)->op == op;
 }
 
-void Parser::err_unexpected_tok(const string &unexpected) {
-  throw "Unexpected Token, expected '" + unexpected + "', found '" +
-      string(*currTok) + '\'';
+inline void Parser::err_unexpected_tok(const string &unexpected) {
+  throw runtime_error("Unexpected Token, expected '" + unexpected +
+                      "', found '" + string(*currTok) + '\'');
 }
 
 unique_ptr<ast::Expression> Parser::parse_extern() {
@@ -66,7 +66,7 @@ unique_ptr<ast::Expression> Parser::parse_function() {
 
   auto proto = parse_prototype();
   if (proto == nullptr)
-    throw "Unable to parse function signature";
+    throw runtime_error("Unable to parse function signature");
 
   // multiline functions
 
@@ -77,17 +77,9 @@ unique_ptr<ast::Expression> Parser::parse_function() {
 
   vector<unique_ptr<ast::Expression>> body;
   while (!is_op(lexer::op_closecurly)) {
-    unique_ptr<ast::Expression> expr = nullptr;
+    unique_ptr<ast::Expression> expr = parse_inner_function();
 
-    if ((expr = parse_var_def()) != nullptr) {
-      body.push_back(std::move(expr));
-      continue;
-    }
-    if ((expr = parse_return()) != nullptr) {
-      body.push_back(std::move(expr));
-      continue;
-    }
-    if ((expr = parse_expression()) != nullptr) {
+    if (expr != nullptr) {
       body.push_back(std::move(expr));
       continue;
     }
@@ -97,18 +89,105 @@ unique_ptr<ast::Expression> Parser::parse_function() {
   advance();
 
   auto func = make_unique<ast::Function>(std::move(proto), std::move(body));
-  cout << "Created prototype for function '" << func->proto->getName() << endl;
   return func;
 }
 
+unique_ptr<ast::Expression> Parser::parse_inner_function() {
+  unique_ptr<ast::Expression> expr = nullptr;
+
+  if ((expr = parse_control_if()) != nullptr) {
+    return std::move(expr);
+  }
+
+  if ((expr = parse_var_def()) != nullptr) {
+    return std::move(expr);
+  }
+  if ((expr = parse_return()) != nullptr) {
+    return std::move(expr);
+  }
+
+  if ((expr = parse_expression()) != nullptr) {
+    return std::move(expr);
+  }
+
+  return nullptr;
+}
+unique_ptr<ast::Expression> Parser::parse_control_if() {
+  if (!is_keyword(lexer::keyword_if)) {
+    return nullptr;
+  }
+  advance();
+
+  auto expr = parse_expression();
+
+  if (!is_op(lexer::op_opencurly)) {
+    err_unexpected_tok("{");
+  }
+  advance();
+
+  vector<unique_ptr<ast::Expression>> body;
+  while (!is_op(lexer::op_closecurly)) {
+    unique_ptr<ast::Expression> expr = parse_inner_function();
+
+    if (expr != nullptr) {
+      body.push_back(std::move(expr));
+      continue;
+    }
+
+    throw runtime_error("Unexpected Token, '" + string(*currTok) + '\'');
+  }
+  advance();
+
+  return make_unique<ast::IfExpression>(std::move(expr), std::move(body),
+                                        parse_control_else());
+}
+
+vector<unique_ptr<ast::Expression>> Parser::parse_control_else() {
+  if (!is_keyword(lexer::keyword_else)) {
+    return vector<unique_ptr<ast::Expression>>();
+  }
+  advance();
+
+  if (is_keyword(lexer::keyword_if)) {
+    auto body = vector<unique_ptr<ast::Expression>>();
+    body.push_back(parse_control_if());
+    return body;
+  }
+
+  if (!is_op(lexer::op_opencurly)) {
+    err_unexpected_tok("{");
+  }
+  advance();
+
+  vector<unique_ptr<ast::Expression>> body;
+
+  while (!is_op(lexer::op_closecurly)) {
+    unique_ptr<ast::Expression> expr = parse_inner_function();
+
+    if (expr != nullptr) {
+      body.push_back(std::move(expr));
+      continue;
+    }
+
+    throw runtime_error("Unexpected Token, '" + string(*currTok) + '\'');
+  }
+  advance();
+
+  return body;
+}
+
 unique_ptr<ast::Expression> Parser::parse_var_def() {
-  if (!is_keyword(lexer::keyword_let)) {
+  auto let = is_keyword(lexer::keyword_let);
+  auto var = is_keyword(lexer::keyword_var);
+
+  if (!let && !var) {
     return nullptr;
   }
   advance();
 
   if (!is_curr(lexer::tok_identifier)) {
-    throw "Expected variable name, found '" + string(*currTok) + '\'';
+    throw runtime_error("Expected variable name, found '" + string(*currTok) +
+                        '\'');
   }
 
   auto ident = ((lexer::IdentifierToken *)currTok)->ident;
@@ -180,6 +259,18 @@ unique_ptr<ast::Expression> Parser::parse_exppression_factor() {
     auto val = ((lexer::F64Literal *)currTok)->literal;
     advance();
     return make_unique<ast::NumberF64Expression>(val);
+  } else if (is_curr(lexer::tok_float)) {
+    auto val = ((lexer::F32Literal *)currTok)->literal;
+    advance();
+    return make_unique<ast::NumberF32Expression>(val);
+  } else if (is_curr(lexer::tok_int)) {
+    auto val = ((lexer::I32Literal *)currTok)->literal;
+    advance();
+    return make_unique<ast::NumberI32Expression>(val);
+  } else if (is_curr(lexer::tok_char)) {
+    auto val = ((lexer::CharLiteral *)currTok)->literal;
+    advance();
+    return make_unique<ast::NumberI8Expression>(val);
   } else if (is_curr(lexer::tok_strliteral)) {
     auto val = ((lexer::StringLiteralToken *)currTok)->literal;
     advance();
@@ -211,7 +302,7 @@ unique_ptr<ast::Expression> Parser::parse_exppression_factor() {
       err_unexpected_tok(")");
     }
     advance();
-    return expr;
+    return std::move(expr);
   } else {
     err_unexpected_tok("expression");
     return nullptr;
@@ -243,7 +334,7 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
 
     advance();
     if (!is_curr(lexer::tok_keyword)) {
-      throw string("Unexpected variable type: ") + string(*currTok);
+      throw runtime_error("Unexpected variable type: " + string(*currTok));
     }
 
     // reads value type
@@ -267,7 +358,7 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
     case lexer::keyword_void:
       valtype = ast::primitive_void;
     default:
-      throw "Unknown type: " + string(*currTok);
+      throw runtime_error("Unknown type: " + string(*currTok));
     }
 
     args.emplace_back(argname, valtype);
@@ -312,7 +403,7 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
       returntype = ast::primitive_void;
       break;
     default:
-      throw "Unknown type: " + string(*currTok);
+      throw runtime_error("Unknown type: " + string(*currTok));
     }
     advance();
   }
@@ -323,6 +414,7 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
 vector<unique_ptr<ast::Expression>> Parser::parse() {
   try {
     vector<unique_ptr<ast::Expression>> expressions;
+
     while (!is_curr(lexer::tok_eof)) {
       unique_ptr<ast::Expression> expr;
 
@@ -332,7 +424,7 @@ vector<unique_ptr<ast::Expression>> Parser::parse() {
       } else if ((expr = parse_extern()) != nullptr) {
         expressions.push_back(std::move(expr));
       } else {
-        throw "Unknown token: " + string(*currTok);
+        throw runtime_error("Unknown token: " + string(*currTok));
       }
     }
 

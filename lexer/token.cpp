@@ -56,4 +56,8 @@ I32Literal::I32Literal(int i) : Token(tok_int), literal(i) {}
 
 I32Literal::operator string() const { return to_string(literal); }
 
+CharLiteral::CharLiteral(char c) : Token(tok_char), literal(c) {}
+
+CharLiteral::operator string() const { return "'" + string(1, literal) + "'"; }
+
 }; // namespace lexer

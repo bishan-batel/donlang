@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 #include "ast.h"
 #include <iostream>
 #include <lexer/token.h>
@@ -23,6 +23,11 @@ class Parser {
   unique_ptr<ast::Prototype> parse_prototype();
   unique_ptr<ast::Expression> parse_function();
   unique_ptr<ast::Expression> parse_extern();
+
+  unique_ptr<ast::Expression> parse_inner_function();
+  unique_ptr<ast::Expression> parse_control_if();
+  vector<unique_ptr<ast::Expression>> parse_control_else();
+
   unique_ptr<ast::Expression> parse_var_def();
   unique_ptr<ast::Expression> parse_return();
 
@@ -33,7 +38,7 @@ class Parser {
   unique_ptr<ast::Expression> parse_expression_compare();
   unique_ptr<ast::Expression> parse_exppression_factor();
 
-  void err_unexpected_tok(const string& expected);
+  inline void err_unexpected_tok(const string &expected);
 
 public:
   Parser(vector<Token *> tokens);
