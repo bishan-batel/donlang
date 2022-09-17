@@ -144,7 +144,7 @@ unique_ptr<ast::Expression> Parser::parse_control_if() {
 
 vector<unique_ptr<ast::Expression>> Parser::parse_control_else() {
   if (!is_keyword(lexer::keyword_else)) {
-    return vector<unique_ptr<ast::Expression>>();
+    return {};
   }
   advance();
 
@@ -339,6 +339,7 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
 
     // reads value type
     ast::Primitive valtype;
+
     switch (((KeywordToken *)currTok)->word) {
     case lexer::keyword_f64:
       valtype = ast::primitive_f64;

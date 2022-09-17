@@ -77,6 +77,11 @@ int main(int nargs, const char *argv[]) {
     module->print(llvm::outs(), nullptr);
   }
 
+  {
+    int a = 0;
+  }
+
+
   std::error_code ec;
   llvm::raw_fd_stream outfile(OutputFileName, ec);
   llvm::WriteBitcodeToFile(*module, outfile);

@@ -21,6 +21,7 @@ enum Keyword : char {
   keyword_extern,
   keyword_if,
   keyword_else,
+  keyword_ptr,
 };
 
 static const map<string, Keyword> KEYWORD_MAP{
@@ -30,7 +31,8 @@ static const map<string, Keyword> KEYWORD_MAP{
     {"char", keyword_char},     {"void", keyword_void},
     {"var", keyword_var},       {"let", keyword_let},
     {"extern", keyword_extern}, {"string", keyword_string},
-    {"if", keyword_if},         {"else", keyword_else}};
+    {"if", keyword_if},         {"else", keyword_else},
+    {"amu", keyword_ptr}};
 
 enum Operator : char {
   op_invalid = -1,

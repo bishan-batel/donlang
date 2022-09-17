@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.23.1)
-project(donlang VERSION 1.0.0)
+cmake_minimum_required(VERSION 3.22.1)
+project(donlang VERSION 1.0.1)
 
 set(CMAKE_CXX_STANDARD_17)
 find_package(LLVM REQUIRED CONFIG)
@@ -14,13 +14,13 @@ separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
 
 llvm_map_components_to_libnames(
-  llvm_libs
-  support
-  core
-  irreader
-  object 
-  native
-  MCJIT
+        llvm_libs
+        support
+        core
+        irreader
+        object
+        native
+        MCJIT
 )
 
 # add multiple subdirectories
@@ -32,5 +32,5 @@ add_subdirectory(core)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # does not produce the json file
 set(CMAKE_EXPORT_COMPILE_COMMANDS
-    ON
-    CACHE INTERNAL "") # works
+        ON
+        CACHE INTERNAL "") # works

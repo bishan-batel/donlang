@@ -21,16 +21,55 @@ public:
   unique_ptr<IRBuilder<>> *builder;
   unique_ptr<Module> *module;
   // named variables
-  map<string, Value *> namedValues;
+  map<string, AllocaInst *> namedValues;
 
   explicit CGContext(unique_ptr<LLVMContext> &, unique_ptr<IRBuilder<>> &,
                      unique_ptr<Module> &);
 };
 }; // namespace codegen
 
-namespace parser {
+namespace parser::ast {
+static const int PRIMITIVE_POINTER_FLAG = 1 << 8;
 
-namespace ast {
+enum Primitive : char {
+  primitive_void = -1,
+  primitive_f32,
+  primitive_f64,
+  primitive_i32,
+  primitive_i64,
+  primitive_char,
+  primitive_string,
+  primitive_bool,
+  primitive_struct,
+};
+
+inline Primitive primitive_to_ptr(Primitive primitive) {
+  return static_cast<Primitive>(primitive | PRIMITIVE_POINTER_FLAG);
+}
+
+inline bool is_primitive_ptr(Primitive primitive) {
+  return primitive & PRIMITIVE_POINTER_FLAG;
+}
+
+inline Primitive primitive_from_keyword(lexer::Keyword keyword) {
+  switch (keyword) {
+  case lexer::keyword_i32:
+    return primitive_i32;
+  case lexer::keyword_f32:
+    return primitive_f32;
+  case lexer::keyword_f64:
+    return primitive_f64;
+  case lexer::keyword_char:
+    return primitive_char;
+  case lexer::keyword_string:
+    return primitive_string;
+  case lexer::keyword_ptr:
+    return primitive_i32;
+  case lexer::keyword_void:
+  default:
+    return primitive_void;
+  }
+}
 
 void add_default_functions(codegen::CGContext &ctx);
 
@@ -105,7 +144,6 @@ public:
 class VariableDefinition : public Expression {
   string name;
   unique_ptr<Expression> expression;
-  bool mut;
 
 public:
   VariableDefinition(string, unique_ptr<Expression>);
@@ -162,18 +200,6 @@ public:
   Value *codegen(codegen::CGContext &ctx) override;
 };
 
-enum Primitive : char {
-  primitive_void = -1,
-  primitive_f32,
-  primitive_f64,
-  primitive_i32,
-  primitive_i64,
-  primitive_char,
-  primitive_string,
-  primitive_bool,
-  primitive_struct,
-};
-
 class IfExpression : public Expression {
   unique_ptr<Expression> condition;
   vector<unique_ptr<Expression>> then;
@@ -198,6 +224,7 @@ public:
   string name;
   Primitive returntype;
   vector<tuple<string, Primitive>> args;
+
   Prototype(string name, Primitive returntype,
             vector<tuple<string, Primitive>> args);
 
@@ -235,6 +262,4 @@ public:
 
 llvm::Type *primitive_to_type(codegen::CGContext &ctx, Primitive prim);
 
-}; // namespace ast
-
-}; // namespace parser
+} // namespace parser::ast

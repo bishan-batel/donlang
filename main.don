@@ -1,16 +1,17 @@
-# main method (args parameter optional)
+# Imported C Methods
 
 
-extern cos(n: f64): f64
-
-extern putchar(str: char): i32
 extern puts(str: string): i32
-extern printf(str: string): i32
+extern putc(str: char): i32
+extern scanf(str: string, a: string): i32
 
 def main(): i32 {
-    printf("Bruh Moment\n")
-    #putchar('\n')
-    
-    return 69
-}
+    let a = 10d
+    let b = 20d
 
+    if a > b {
+        puts("a is greater than b")
+    } 
+
+    return 0
+}
