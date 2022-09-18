@@ -1,17 +1,26 @@
-# Imported C Methods
-
-
+# extern C functions
 extern puts(str: string): i32
-extern putc(str: char): i32
-extern scanf(str: string, a: string): i32
+extern printf(str: string, double: f64): i32
+extern scanf(str: string, a: ptr f64): i32
+
+def get_funny_number() {
+}
 
 def main(): i32 {
-    let a = 10d
-    let b = 20d
+    let input = 0d
 
-    if a > b {
-        puts("a is greater than b")
-    } 
+    # print out prompt
+    puts("enter a number: ")
 
-    return 0
+    printf("%f\n", input)
+
+    scanf("%g", ref input) # read floating pointer number into input
+
+    printf("%f\n", input)
+
+    if input is 69d {
+        puts("funny sex number")
+    } else {
+        puts("not funny")
+    }
 }

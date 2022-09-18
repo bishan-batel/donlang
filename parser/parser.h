@@ -32,10 +32,11 @@ class Parser {
   unique_ptr<ast::Expression> parse_return();
 
   unique_ptr<ast::Expression> parse_expression();
+  unique_ptr<ast::Expression> parse_expression_set();
+  unique_ptr<ast::Expression> parse_expression_compare();
+  unique_ptr<ast::Expression> parse_expression_eq();
   unique_ptr<ast::Expression> parse_expression_add();
   unique_ptr<ast::Expression> parse_expression_mul();
-  unique_ptr<ast::Expression> parse_expression_eq();
-  unique_ptr<ast::Expression> parse_expression_compare();
   unique_ptr<ast::Expression> parse_exppression_factor();
 
   inline void err_unexpected_tok(const string &expected);

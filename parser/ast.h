@@ -29,10 +29,9 @@ public:
 }; // namespace codegen
 
 namespace parser::ast {
-static const int PRIMITIVE_POINTER_FLAG = 1 << 8;
 
-enum Primitive : char {
-  primitive_void = -1,
+enum Primitive : int {
+  primitive_void = 0,
   primitive_f32,
   primitive_f64,
   primitive_i32,
@@ -43,32 +42,18 @@ enum Primitive : char {
   primitive_struct,
 };
 
+static const int PRIMITIVE_POINTER_FLAG = 1 << 31;
+
+inline Primitive primitive_flip_ptr(Primitive primitive) {
+  return (Primitive)(primitive ^ PRIMITIVE_POINTER_FLAG);
+}
+
 inline Primitive primitive_to_ptr(Primitive primitive) {
-  return static_cast<Primitive>(primitive | PRIMITIVE_POINTER_FLAG);
+  return primitive_flip_ptr(primitive);
 }
 
 inline bool is_primitive_ptr(Primitive primitive) {
   return primitive & PRIMITIVE_POINTER_FLAG;
-}
-
-inline Primitive primitive_from_keyword(lexer::Keyword keyword) {
-  switch (keyword) {
-  case lexer::keyword_i32:
-    return primitive_i32;
-  case lexer::keyword_f32:
-    return primitive_f32;
-  case lexer::keyword_f64:
-    return primitive_f64;
-  case lexer::keyword_char:
-    return primitive_char;
-  case lexer::keyword_string:
-    return primitive_string;
-  case lexer::keyword_ptr:
-    return primitive_i32;
-  case lexer::keyword_void:
-  default:
-    return primitive_void;
-  }
 }
 
 void add_default_functions(codegen::CGContext &ctx);
@@ -154,9 +139,8 @@ public:
 };
 
 class VariableExpression : public Expression {
-  string name;
-
 public:
+  string name;
   explicit VariableExpression(string name);
 
   explicit operator string() const override;
@@ -171,6 +155,18 @@ class BinaryExpresion : public Expression {
 public:
   BinaryExpresion(lexer::Operator op, unique_ptr<Expression> lhs,
                   unique_ptr<Expression> rhs);
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
+};
+
+class UnaryExpression : public Expression {
+  lexer::Operator op;
+  unique_ptr<Expression> expression;
+
+public:
+  UnaryExpression(lexer::Operator op, unique_ptr<Expression> expression);
 
   explicit operator string() const override;
 

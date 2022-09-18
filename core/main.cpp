@@ -4,7 +4,7 @@
 #include <iostream>
 #include <jit/JIT.h>
 #include <lexer/lexer.h>
-#include <llvm-c/Target.h>
+#include <llvm/Target/TargetMachine.h>
 #include <llvm/Analysis/LoopInfo.h>
 #include <llvm/ExecutionEngine/MCJIT.h>
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
@@ -77,13 +77,12 @@ int main(int nargs, const char *argv[]) {
     module->print(llvm::outs(), nullptr);
   }
 
-  {
-    int a = 0;
-  }
-
+  // TODO remove
+  module->setTargetTriple("x86_64-pc-linux-gnu");
 
   std::error_code ec;
   llvm::raw_fd_stream outfile(OutputFileName, ec);
   llvm::WriteBitcodeToFile(*module, outfile);
+
   return 0;
 }

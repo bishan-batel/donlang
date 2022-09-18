@@ -203,7 +203,18 @@ unique_ptr<ast::Expression> Parser::parse_var_def() {
 }
 
 unique_ptr<ast::Expression> Parser::parse_expression() {
-  return parse_expression_compare();
+  return parse_expression_set();
+}
+
+unique_ptr<ast::Expression> Parser::parse_expression_set() {
+  auto node = parse_expression_compare();
+
+  while (is_keyword(lexer::keyword_is)) {
+    advance();
+    node = make_unique<ast::BinaryExpresion>(op_set, std::move(node),
+                                             parse_expression_compare());
+  }
+  return node;
 }
 
 unique_ptr<ast::Expression> Parser::parse_expression_compare() {
@@ -295,6 +306,21 @@ unique_ptr<ast::Expression> Parser::parse_exppression_factor() {
 
     advance();
     return make_unique<ast::CallExpression>(val, std::move(args));
+  } else if (is_op(lexer::op_minus)) {
+    // Unary minus
+    advance();
+    return make_unique<ast::UnaryExpression>(lexer::op_minus,
+                                             parse_exppression_factor());
+  } else if (is_op(lexer::op_not)) {
+    // Unary not
+    advance();
+    return make_unique<ast::UnaryExpression>(lexer::op_not,
+                                             parse_exppression_factor());
+  } else if (is_keyword(lexer::keyword_ref)) {
+    // Unary dereference
+    advance();
+    return make_unique<ast::UnaryExpression>(lexer::op_ref,
+                                             parse_exppression_factor());
   } else if (is_op(lexer::op_openparen)) {
     advance();
     auto expr = parse_expression();
@@ -324,6 +350,7 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
   vector<tuple<string, ast::Primitive>> args;
   // read each argument
   advance();
+
   while (is_curr(lexer::tok_identifier)) {
     auto argname = ((IdentifierToken *)currTok)->ident;
 
@@ -335,6 +362,15 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
     advance();
     if (!is_curr(lexer::tok_keyword)) {
       throw runtime_error("Unexpected variable type: " + string(*currTok));
+    }
+
+    bool isPtr = false;
+    if (is_keyword(lexer::keyword_ptr)) {
+      isPtr = true;
+      advance();
+      if (!is_curr(lexer::tok_keyword)) {
+        throw runtime_error("Unexpected variable type: " + string(*currTok));
+      }
     }
 
     // reads value type
@@ -360,6 +396,10 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
       valtype = ast::primitive_void;
     default:
       throw runtime_error("Unknown type: " + string(*currTok));
+    }
+
+    if (isPtr) {
+      valtype = ast::primitive_to_ptr(valtype);
     }
 
     args.emplace_back(argname, valtype);
