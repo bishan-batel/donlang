@@ -492,147 +492,144 @@ Prototype::operator string() const {
 }
 
 llvm::Type *primitive_to_type(codegen::CGContext &ctx, Primitive prim) {
-  if (ast::is_primitive_ptr(prim)) {
+  auto isptr = ast::is_primitive_ptr(prim);
+  if (isptr) 
     prim = ast::primitive_flip_ptr(prim);
+  
 
+    Type *ty;
     switch (prim) {
     case Primitive::primitive_f64:
-      return Type::getDoublePtrTy(**ctx.llvm);
+      ty = Type::getDoubleTy(**ctx.llvm);
+      break;
     case Primitive::primitive_f32:
-      return Type::getFloatPtrTy(**ctx.llvm);
+      ty = Type::getFloatTy(**ctx.llvm);
+      break;
     case Primitive::primitive_char:
-      return Type::getInt8PtrTy(**ctx.llvm);
+      ty = Type::getInt8Ty(**ctx.llvm);
+      break;
+    case Primitive::primitive_string:
+      ty = Type::getInt8PtrTy(**ctx.llvm);
+      break;
+    case Primitive::primitive_void:
+      ty = Type::getVoidTy(**ctx.llvm);
+      break;
     case Primitive::primitive_i64:
-      return Type::getInt64PtrTy(**ctx.llvm);
+      ty = Type::getInt64Ty(**ctx.llvm);
+      break;
     case Primitive::primitive_i32:
-      return Type::getInt32PtrTy(**ctx.llvm);
+      ty = Type::getInt32Ty(**ctx.llvm);
+      break;
     case Primitive::primitive_bool:
-      return Type::getInt1PtrTy(**ctx.llvm);
+      ty = Type::getInt1Ty(**ctx.llvm);
+      break;
     default:
-      throw "Invalid primitive pointer type: " + to_string(prim) + ", " +
+      throw "Invalid primitive type: " + to_string(prim) + ", " +
           to_string(parser::ast::primitive_flip_ptr(prim));
     }
-  }
 
-  switch (prim) {
-  case Primitive::primitive_f64:
-    return Type::getDoubleTy(**ctx.llvm);
-  case Primitive::primitive_f32:
-    return Type::getFloatTy(**ctx.llvm);
-  case Primitive::primitive_char:
-    return Type::getInt8Ty(**ctx.llvm);
-  case Primitive::primitive_string:
-    return Type::getInt8PtrTy(**ctx.llvm);
-  case Primitive::primitive_void:
-    return Type::getVoidTy(**ctx.llvm);
-  case Primitive::primitive_i64:
-    return Type::getInt64Ty(**ctx.llvm);
-  case Primitive::primitive_i32:
-    return Type::getInt32Ty(**ctx.llvm);
-  case Primitive::primitive_bool:
-    return Type::getInt1Ty(**ctx.llvm);
-  default:
-    throw "Invalid primitive type: " + to_string(prim) + ", " +
-        to_string(parser::ast::primitive_flip_ptr(prim));
-  }
-}
-
-llvm::Function *Prototype::codegen(codegen::CGContext &ctx) {
-  vector<Type *> arg_types;
-
-  for (auto arg : args) {
-    arg_types.push_back(primitive_to_type(ctx, get<1>(arg)));
-  }
-
-  auto func_type =
-      FunctionType::get(primitive_to_type(ctx, returntype), arg_types, false);
-  auto func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage,
-                                     name, *ctx.module->get());
-
-  int idx = 0;
-  for (auto &arg : func->args()) {
-    arg.setName(get<0>(args[idx++]));
-  }
-
-  return func;
-}
-
-Prototype::~Prototype() {}
-
-/**
- * Function
- */
-Function::Function(unique_ptr<Prototype> proto,
-                   vector<unique_ptr<Expression>> body)
-    : proto(std::move(proto)), body(std::move(body)) {}
-
-Function::operator string() const {
-  string str = "Function:\n\t" + string(*proto);
-  str += "\nBody:\n";
-  for (auto &expr : body) {
-    if (expr != nullptr) {
-      str += "\t" + string(*expr) + "\n";
+    if (isptr) {
+      ty = ty->getPointerTo();
     }
-  }
-  return str;
-}
-
-Value *Function::codegen(codegen::CGContext &ctx) {
-  auto func = proto->codegen(ctx);
-  if (func == nullptr) {
-    return nullptr;
+    return ty;
   }
 
-  auto bb = BasicBlock::Create(**ctx.llvm, "entry", func);
-  ctx.builder->get()->SetInsertPoint(bb);
+  llvm::Function *Prototype::codegen(codegen::CGContext & ctx) {
+    vector<Type *> arg_types;
 
-  // add arguments to namedValues
-  for (auto &arg : func->args()) {
-    // ctx.namedValues[arg.getName().str()] = &arg;
-
-    // create an alloca for this variable
-    AllocaInst *alloca = ctx.builder->get()->CreateAlloca(
-        arg.getType(), 0, arg.getName().str().c_str());
-
-    // store the initial value into the alloca
-    ctx.builder->get()->CreateStore(&arg, alloca);
-
-    // add the alloca to the symbol table
-    ctx.namedValues[arg.getName().str()] = alloca;
-  }
-
-  for (auto &expr : body) {
-    if (expr != nullptr) {
-      expr->codegen(ctx);
+    for (auto arg : args) {
+      arg_types.push_back(primitive_to_type(ctx, get<1>(arg)));
     }
+
+    auto func_type =
+        FunctionType::get(primitive_to_type(ctx, returntype), arg_types, false);
+    auto func = llvm::Function::Create(
+        func_type, llvm::Function::ExternalLinkage, name, *ctx.module->get());
+
+    int idx = 0;
+    for (auto &arg : func->args()) {
+      arg.setName(get<0>(args[idx++]));
+    }
+
+    return func;
   }
 
-  // remove arguments from named values
-  for (auto &arg : func->args()) {
-    ctx.namedValues[arg.getName().str()] = nullptr;
+  Prototype::~Prototype() {}
+
+  /**
+   * Function
+   */
+  Function::Function(unique_ptr<Prototype> proto,
+                     vector<unique_ptr<Expression>> body)
+      : proto(std::move(proto)), body(std::move(body)) {}
+
+  Function::operator string() const {
+    string str = "Function:\n\t" + string(*proto);
+    str += "\nBody:\n";
+    for (auto &expr : body) {
+      if (expr != nullptr) {
+        str += "\t" + string(*expr) + "\n";
+      }
+    }
+    return str;
   }
 
-  if (ctx.builder->get()->GetInsertBlock()->getTerminator() == nullptr) {
-    ctx.builder->get()->CreateRetVoid();
+  Value *Function::codegen(codegen::CGContext & ctx) {
+    auto func = proto->codegen(ctx);
+    if (func == nullptr) {
+      return nullptr;
+    }
+
+    auto bb = BasicBlock::Create(**ctx.llvm, "entry", func);
+    ctx.builder->get()->SetInsertPoint(bb);
+
+    // add arguments to namedValues
+    for (auto &arg : func->args()) {
+      // ctx.namedValues[arg.getName().str()] = &arg;
+
+      // create an alloca for this variable
+      AllocaInst *alloca = ctx.builder->get()->CreateAlloca(
+          arg.getType(), 0, arg.getName().str().c_str());
+
+      // store the initial value into the alloca
+      ctx.builder->get()->CreateStore(&arg, alloca);
+
+      // add the alloca to the symbol table
+      ctx.namedValues[arg.getName().str()] = alloca;
+    }
+
+    for (auto &expr : body) {
+      if (expr != nullptr) {
+        expr->codegen(ctx);
+      }
+    }
+
+    // remove arguments from named values
+    for (auto &arg : func->args()) {
+      ctx.namedValues[arg.getName().str()] = nullptr;
+    }
+
+    if (ctx.builder->get()->GetInsertBlock()->getTerminator() == nullptr) {
+      ctx.builder->get()->CreateRetVoid();
+    }
+    return func;
   }
-  return func;
-}
 
-/**
- * ExternFunction
- */
+  /**
+   * ExternFunction
+   */
 
-ExternFunction::ExternFunction(unique_ptr<Prototype> proto)
-    : proto(std::move(proto)) {}
+  ExternFunction::ExternFunction(unique_ptr<Prototype> proto)
+      : proto(std::move(proto)) {}
 
-ExternFunction::operator string() const {
-  return "Extern Function:\n\t" + string(*proto);
-}
+  ExternFunction::operator string() const {
+    return "Extern Function:\n\t" + string(*proto);
+  }
 
-Value *ExternFunction::codegen(codegen::CGContext &ctx) {
-  return proto->codegen(ctx);
-}
+  Value *ExternFunction::codegen(codegen::CGContext & ctx) {
+    return proto->codegen(ctx);
+  }
 
-void add_default_functions(codegen::CGContext &ctx) {}
+  void add_default_functions(codegen::CGContext & ctx) {}
 
 } // namespace parser::ast

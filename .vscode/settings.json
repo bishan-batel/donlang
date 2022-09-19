@@ -3,6 +3,8 @@
     "sstream": "cpp",
     "memory": "cpp",
     "utility": "cpp",
-    "stdexcept": "cpp"
+    "stdexcept": "cpp",
+    "*.tcc": "cpp",
+    "istream": "cpp"
   }
 }

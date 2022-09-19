@@ -25,6 +25,10 @@ build:
 don:
 	$(CMAKE_BUILD_DIR)/donlang -p -o $(DONLANG_LL_OUT) $(DONLANG_SOURCE)
 	clang $(DONLANG_LL_OUT) -o $(DONLANG_EXECUTABLE)
+
+don-reload: don don-run
+
+don-run:
 	$(DONLANG_EXECUTABLE)
 
 
