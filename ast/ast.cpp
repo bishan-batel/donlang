@@ -153,6 +153,32 @@ Value *ReturnExpression::codegen(codegen::CGContext &ctx) {
 }
 
 /**
+ * Cast Expression
+ */
+CastExpression::CastExpression(unique_ptr<Expression> expr, Primitive type)
+    : expression(std::move(expr)), type(std::move(type)) {}
+
+CastExpression::operator string() const {
+  return "cast[" + string(*expression) + " to " + to_string(type) + "]";
+}
+
+Value *CastExpression::codegen(codegen::CGContext &ctx) {
+  auto expr = expression->codegen(ctx);
+  if (expr == nullptr) {
+    throw string("Cannot cast null expression");
+  }
+
+  switch (type) {
+  case primitive_i64:
+    return ctx.builder->get()->CreateFPToSI(expr, Type::getInt64Ty(**ctx.llvm));
+  case primitive_i32:
+    return ctx.builder->get()->CreateFPToSI(expr, Type::getInt32Ty(**ctx.llvm));
+  default:
+    throw runtime_error("Cannot cast to unknown type");
+  }
+}
+
+/**
  * Binary Expression
  */
 BinaryExpresion::BinaryExpresion(lexer::Operator op, unique_ptr<Expression> lhs,
@@ -389,6 +415,64 @@ Value *IfExpression::codegen(codegen::CGContext &ctx) {
 }
 
 /**
+ * While Expression
+ */
+
+WhileExpression::WhileExpression(unique_ptr<Expression> cond,
+                                 vector<unique_ptr<Expression>> body)
+    : condition(std::move(cond)), body(std::move(body)) {}
+
+WhileExpression::operator string() const {
+  auto str = "while (" + string(*condition) + ") do (";
+
+  for (auto &expr : body) {
+    str += string(*expr);
+  }
+
+  return str + ")";
+}
+
+Value *WhileExpression::codegen(codegen::CGContext &ctx) {
+  auto func = ctx.builder->get()->GetInsertBlock()->getParent();
+
+  // create blocks for then and else
+  BasicBlock *cond_block = BasicBlock::Create(**ctx.llvm, "whilecond", func);
+  BasicBlock *body_block = BasicBlock::Create(**ctx.llvm, "whilebody");
+  BasicBlock *merge_block = BasicBlock::Create(**ctx.llvm, "whilecont");
+
+  ctx.builder->get()->CreateBr(cond_block);
+  ctx.builder->get()->SetInsertPoint(cond_block);
+
+  Value *cond = condition->codegen(ctx);
+  if (cond == nullptr) {
+    throw runtime_error("Invalid while expression: condition is null");
+  }
+
+  // convert condition to a bool by comparing equal to 0
+  cond = ctx.builder->get()->CreateICmpNE(
+      cond,
+      ConstantInt::get(ctx.builder->get()->getContext(), APInt(1, 0, true)),
+      "whilecond");
+
+  ctx.builder->get()->CreateCondBr(cond, body_block, merge_block);
+
+  func->getBasicBlockList().push_back(body_block);
+  ctx.builder->get()->SetInsertPoint(body_block);
+
+  Value *body_val = nullptr;
+  for (auto &expr : body) {
+    body_val = expr->codegen(ctx);
+  }
+
+  ctx.builder->get()->CreateBr(cond_block);
+  body_block = ctx.builder->get()->GetInsertBlock();
+
+  func->getBasicBlockList().push_back(merge_block);
+  ctx.builder->get()->SetInsertPoint(merge_block);
+
+  return Constant::getNullValue(Type::getDoubleTy(**ctx.llvm));
+}
+/**
  * Function Prototype
  */
 Prototype::Prototype(string name, Primitive returntype,
@@ -425,7 +509,8 @@ llvm::Type *primitive_to_type(codegen::CGContext &ctx, Primitive prim) {
     case Primitive::primitive_bool:
       return Type::getInt1PtrTy(**ctx.llvm);
     default:
-      throw "Invalid primitive pointer type: " + to_string(prim) + ", " + to_string(parser::ast::primitive_flip_ptr(prim));
+      throw "Invalid primitive pointer type: " + to_string(prim) + ", " +
+          to_string(parser::ast::primitive_flip_ptr(prim));
     }
   }
 
@@ -447,7 +532,8 @@ llvm::Type *primitive_to_type(codegen::CGContext &ctx, Primitive prim) {
   case Primitive::primitive_bool:
     return Type::getInt1Ty(**ctx.llvm);
   default:
-      throw "Invalid primitive type: " + to_string(prim) + ", " + to_string(parser::ast::primitive_flip_ptr(prim));
+    throw "Invalid primitive type: " + to_string(prim) + ", " +
+        to_string(parser::ast::primitive_flip_ptr(prim));
   }
 }
 

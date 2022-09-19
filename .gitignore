@@ -1,26 +1,7 @@
-# Ninja 
-.ninja_deps
-.ninja_log
-build.ninja
-
 .idea/
-
-# Cmake
-Testing/
-CMakeLists.txt.user
-CMakeCache.txt
-CMakeFiles
-CMakeScripts
-Testing
-Makefile
-cmake_install.cmake
-install_manifest.txt
-compile_commands.json
-CTestTestfile.cmake
-_deps
-.cache
-.cmake
+.vscode
 
 # Build files
+compile_commands.json
 build/
-*.a
+target/

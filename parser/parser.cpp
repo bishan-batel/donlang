@@ -1,6 +1,6 @@
 #include "parser.h"
-#include "ast.h"
 #include "lexer/token.h"
+#include <ast/ast.h>
 #include <memory>
 #include <tuple>
 #include <utility>
@@ -99,6 +99,10 @@ unique_ptr<ast::Expression> Parser::parse_inner_function() {
     return std::move(expr);
   }
 
+  if ((expr = parse_control_while()) != nullptr) {
+    return std::move(expr);
+  }
+
   if ((expr = parse_var_def()) != nullptr) {
     return std::move(expr);
   }
@@ -112,6 +116,7 @@ unique_ptr<ast::Expression> Parser::parse_inner_function() {
 
   return nullptr;
 }
+
 unique_ptr<ast::Expression> Parser::parse_control_if() {
   if (!is_keyword(lexer::keyword_if)) {
     return nullptr;
@@ -174,6 +179,35 @@ vector<unique_ptr<ast::Expression>> Parser::parse_control_else() {
   advance();
 
   return body;
+}
+
+unique_ptr<ast::Expression> Parser::parse_control_while() {
+  if (!is_keyword(lexer::keyword_while)) {
+    return nullptr;
+  }
+  advance();
+
+  auto expr = parse_expression();
+
+  if (!is_op(lexer::op_opencurly)) {
+    err_unexpected_tok("{");
+  }
+  advance();
+
+  vector<unique_ptr<ast::Expression>> body;
+  while (!is_op(lexer::op_closecurly)) {
+    unique_ptr<ast::Expression> expr = parse_inner_function();
+
+    if (expr != nullptr) {
+      body.push_back(std::move(expr));
+      continue;
+    }
+
+    throw string("Unexpected Token, '" + string(*currTok) + '\'');
+  }
+  advance();
+
+  return make_unique<ast::WhileExpression>(std::move(expr), std::move(body));
 }
 
 unique_ptr<ast::Expression> Parser::parse_var_def() {
@@ -254,13 +288,26 @@ unique_ptr<ast::Expression> Parser::parse_expression_add() {
 }
 
 unique_ptr<ast::Expression> Parser::parse_expression_mul() {
-  auto node = parse_exppression_factor();
+  auto node = parse_expression_cast();
 
   while (is_op(lexer::op_mul) || is_op(lexer::op_div) || is_op(lexer::op_mod)) {
     auto op = ((OperatorToken *)currTok)->op;
     advance();
     node = make_unique<ast::BinaryExpresion>(op, std::move(node),
-                                             parse_exppression_factor());
+                                             parse_expression_cast());
+  }
+  return node;
+}
+
+unique_ptr<ast::Expression> Parser::parse_expression_cast() {
+  auto node = parse_exppression_factor();
+
+  while (is_keyword(keyword_as)) {
+    advance();
+    auto prim = parser::keyword_to_primitive(
+        ((lexer::KeywordToken *)currTok)->word, false);
+    node = make_unique<ast::CastExpression>(std::move(node), prim);
+    advance();
   }
   return node;
 }
@@ -474,6 +521,38 @@ vector<unique_ptr<ast::Expression>> Parser::parse() {
     cout << "[PARSER ERROR]: " << err << endl;
     return {};
   }
+}
+
+ast::Primitive keyword_to_primitive(Keyword word, bool isptr) {
+  ast::Primitive prim;
+
+  switch (word) {
+  case lexer::keyword_f64:
+    prim = ast::primitive_f64;
+    break;
+  case lexer::keyword_f32:
+    prim = ast::primitive_f32;
+    break;
+  case lexer::keyword_i32:
+    prim = ast::primitive_i32;
+    break;
+  case lexer::keyword_char:
+    prim = ast::primitive_char;
+    break;
+  case lexer::keyword_string:
+    prim = ast::primitive_string;
+    break;
+  case lexer::keyword_void:
+    prim = ast::primitive_void;
+    break;
+  default:
+    throw string("Unknown type: " + string(KeywordToken(word)));
+  }
+
+  if (isptr)
+    prim = ast::primitive_to_ptr(prim);
+
+  return prim;
 }
 
 }; // namespace parser

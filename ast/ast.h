@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lexer/token.h"
+#include <lexer/token.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
@@ -148,6 +148,18 @@ public:
   Value *codegen(codegen::CGContext &ctx) override;
 };
 
+class CastExpression : public Expression {
+  unique_ptr<Expression> expression;
+  Primitive type;
+
+public:
+  CastExpression(unique_ptr<Expression> expression, Primitive primitive);
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
+};
+
 class BinaryExpresion : public Expression {
   lexer::Operator op;
   unique_ptr<Expression> lhs, rhs;
@@ -205,6 +217,23 @@ public:
   IfExpression(unique_ptr<Expression> condition,
                vector<unique_ptr<Expression>> then,
                vector<unique_ptr<Expression>> otherwise);
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
+};
+
+/**
+ * While loop expression
+ */
+
+class WhileExpression : public Expression {
+  unique_ptr<Expression> condition;
+  vector<unique_ptr<Expression>> body;
+
+public:
+  WhileExpression(unique_ptr<Expression> condition,
+                  vector<unique_ptr<Expression>> body);
 
   explicit operator string() const override;
 

@@ -24,6 +24,8 @@ enum Keyword : char {
   keyword_is,
   keyword_ptr,
   keyword_ref,
+  keyword_as,
+  keyword_while,
 };
 
 static const map<string, Keyword> KEYWORD_MAP{
@@ -35,7 +37,8 @@ static const map<string, Keyword> KEYWORD_MAP{
     {"extern", keyword_extern}, {"string", keyword_string},
     {"if", keyword_if},         {"else", keyword_else},
     {"ptr", keyword_ptr},       {"ref", keyword_ref},
-    {"is", keyword_is}};
+    {"is", keyword_is},         {"as", keyword_as},
+    {"while", keyword_while}};
 
 enum Operator : char {
   op_invalid = -1,

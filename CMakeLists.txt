@@ -28,6 +28,7 @@ add_subdirectory(utils)
 add_subdirectory(lexer)
 add_subdirectory(jit)
 add_subdirectory(parser)
+add_subdirectory(ast)
 add_subdirectory(core)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # does not produce the json file

@@ -1,26 +1,18 @@
 # extern C functions
 extern puts(str: string): i32
-extern printf(str: string, double: f64): i32
+extern printf(str: string, f: i32): i32
 extern scanf(str: string, a: ptr f64): i32
 
-def get_funny_number() {
-}
-
 def main(): i32 {
-    let input = 0d
 
-    # print out prompt
-    puts("enter a number: ")
+    let a = 69
 
-    printf("%f\n", input)
-
-    scanf("%g", ref input) # read floating pointer number into input
-
-    printf("%f\n", input)
-
-    if input is 69d {
-        puts("funny sex number")
-    } else {
-        puts("not funny")
+    while 1 {
+        #printf("%d\n", 69)
+        printf("%d\n", a)
+        let b = a 
+        #a = a + 1
     }
+
+    return 0
 }

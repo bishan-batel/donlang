@@ -16,7 +16,7 @@
 #include <llvm/Pass.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/Error.h>
-#include <parser/ast.h>
+#include <llvm/Bitcode/BitcodeWriter.h>
 #include <parser/parser.h>
 #include <sstream>
 #include <string>
@@ -27,12 +27,12 @@ using namespace std;
 static cl::opt<bool> PrintIR("p", cl::desc("Print the IR"), cl::init(false));
 
 static cl::opt<std::string> InputFileName(cl::Positional,
-                                          cl::desc("<input file>"));
+  cl::desc("<input file>"));
 
 static cl::opt<std::string> OutputFileName("o", cl::desc("<output ll file>"),
-                                           cl::init("a.ll"));
+  cl::init("a.ll"));
 
-int main(int nargs, const char *argv[]) {
+int main(int nargs, const char* argv[]) {
   // init CL
 
   llvm::cl::ParseCommandLineOptions(nargs, argv, "Donlang Compiler");
@@ -65,10 +65,11 @@ int main(int nargs, const char *argv[]) {
 
   parser::ast::add_default_functions(ctx);
   try {
-    for (auto &expr : ast) {
+    for (auto& expr : ast) {
       expr->codegen(ctx);
     }
-  } catch (string ex) {
+  }
+  catch (string ex) {
     cout << "[ERROR CODEGEN]: " << ex << endl;
     return 1;
   }
