@@ -21,6 +21,7 @@
 #include <sstream>
 #include <string>
 #include <utils/stringutils.h>
+#include <stdio.h>
 
 using namespace std;
 
@@ -34,6 +35,8 @@ static cl::opt<std::string> OutputFileName("o", cl::desc("<output ll file>"),
 
 int main(int nargs, const char* argv[]) {
   // init CL
+  //
+  fopen("a.ll", "w");
 
   llvm::cl::ParseCommandLineOptions(nargs, argv, "Donlang Compiler");
 

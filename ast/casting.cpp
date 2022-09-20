@@ -91,15 +91,21 @@ Value *CastExpression::codegen(codegen::CGContext &ctx) {
 
     case parser::ast::primitive_char:
       return ctx.builder->get()->CreateTrunc(expr, Type::getInt8Ty(**ctx.llvm));
-
     default:
-      throw runtime_error("Cannot cast to unknown type");
+      break;
     }
   } else if (valtype->isPointerTy()) {
-    // load pointer valtype
-    return ctx.builder->get()->CreateLoad(valtype->getContainedType(0), expr);
+    /**
+     * POINTER CASTING
+     */
+    switch (type) {
+    case primitive_bool:
+      return ctx.builder->get()->CreatePointerCast(expr,
+                                                   Type::getInt1Ty(**ctx.llvm));
+    default:
+      break;
+    }
   }
-
-  throw runtime_error("Cannot cast unknown type");
+  throw string("Cannot cast unknown type: " + to_string(type));
 }
 } // namespace parser::ast
