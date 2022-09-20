@@ -8,38 +8,93 @@ namespace lexer {
 
 enum Keyword : char {
   keyword_invalid = -1,
+
+  // Function
   keyword_def,
-  keyword_return,
+  keyword_extern,
+
+  // Types
   keyword_i32,
   keyword_f32,
   keyword_f64,
   keyword_char,
   keyword_void,
+  keyword_string,
+  keyword_bool,
+
+  // Variables
   keyword_var,
   keyword_let,
-  keyword_string,
-  keyword_extern,
-  keyword_if,
-  keyword_else,
+
+  // operations
   keyword_is,
+  keyword_and,
+  keyword_not,
+
+  // pointers / casting
   keyword_ptr,
   keyword_ref,
   keyword_as,
+
+  // Control Flow
+  keyword_if,
+  keyword_else,
+  keyword_return,
+
+  // loops
   keyword_while,
-  keyword_bool
+  keyword_for,
+
+  // boolean
+  keyword_true,
+  keyword_false,
+
+  // classes
+  keyword_class,
+  keyword_data,
+  keyword_constructor,
+  keyword_self,
+
+  // modules
+  keyword_package,
+  keyword_import,
+  keyword_export,
+  keyword_from
 };
 
 static const map<string, Keyword> KEYWORD_MAP{
-    {"def", keyword_def},       {"return", keyword_return},
-    {"i32", keyword_i32},       {"f32", keyword_f32},
-    {"i8", keyword_char},       {"f64", keyword_f64},
-    {"bool", keyword_bool},     {"char", keyword_char},
-    {"void", keyword_void},     {"var", keyword_var},
-    {"let", keyword_let},       {"extern", keyword_extern},
-    {"string", keyword_string}, {"if", keyword_if},
-    {"else", keyword_else},     {"ptr", keyword_ptr},
-    {"ref", keyword_ref},       {"is", keyword_is},
-    {"as", keyword_as},         {"while", keyword_while}};
+    {"def", keyword_def},
+    {"extern", keyword_extern},
+    {"i32", keyword_i32},
+    {"f32", keyword_f32},
+    {"f64", keyword_f64},
+    {"char", keyword_char},
+    {"void", keyword_void},
+    {"string", keyword_string},
+    {"bool", keyword_bool},
+    {"var", keyword_var},
+    {"let", keyword_let},
+    {"is", keyword_is},
+    {"and", keyword_and},
+    {"not", keyword_not},
+    {"ptr", keyword_ptr},
+    {"ref", keyword_ref},
+    {"as", keyword_as},
+    {"if", keyword_if},
+    {"else", keyword_else},
+    {"return", keyword_return},
+    {"while", keyword_while},
+    {"for", keyword_for},
+    {"true", keyword_true},
+    {"false", keyword_false},
+    {"class", keyword_class},
+    {"data", keyword_data},
+    {"constructor", keyword_constructor},
+    {"self", keyword_self},
+    {"package", keyword_package},
+    {"import", keyword_import},
+    {"export", keyword_export},
+    {"from", keyword_from}};
 
 enum Operator : char {
   op_invalid = -1,
@@ -160,5 +215,4 @@ public:
   char literal;
   operator string() const override;
 };
-
 }; // namespace lexer
