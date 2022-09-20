@@ -1,9 +1,20 @@
 #pragma once
 
+#include "lexer/token.h"
+#include <iostream>
 #include <lexer/token.h>
+#include <llvm/ADT/APInt.h>
+#include <llvm/ADT/APSInt.h>
+#include <llvm/IR/Argument.h>
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Constant.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/InstrTypes.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
+#include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 #include <memory>
 #include <string>
@@ -31,7 +42,8 @@ public:
 namespace parser::ast {
 
 enum Primitive : int {
-  primitive_void = 0,
+  primitive_invalid = -1,
+  primitive_void,
   primitive_f32,
   primitive_f64,
   primitive_i32,
@@ -286,5 +298,6 @@ public:
 };
 
 llvm::Type *primitive_to_type(codegen::CGContext &ctx, Primitive prim);
+Primitive primitive_from_type(Type *type);
 
 } // namespace parser::ast

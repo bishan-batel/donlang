@@ -227,7 +227,7 @@ unique_ptr<ast::Expression> Parser::parse_var_def() {
   auto ident = ((lexer::IdentifierToken *)currTok)->ident;
   advance();
 
-  if (is_op(lexer::op_eq)) {
+  if (is_op(lexer::op_assign)) {
     advance();
     return make_unique<ast::VariableDefinition>(ident, parse_expression());
   } else {
@@ -245,7 +245,7 @@ unique_ptr<ast::Expression> Parser::parse_expression_set() {
 
   while (is_keyword(lexer::keyword_is)) {
     advance();
-    node = make_unique<ast::BinaryExpresion>(op_set, std::move(node),
+    node = make_unique<ast::BinaryExpresion>(op_equal, std::move(node),
                                              parse_expression_compare());
   }
   return node;
@@ -266,7 +266,7 @@ unique_ptr<ast::Expression> Parser::parse_expression_compare() {
 unique_ptr<ast::Expression> Parser::parse_expression_eq() {
   auto node = parse_expression_add();
 
-  while (is_op(lexer::op_eq)) {
+  while (is_op(lexer::op_assign)) {
     auto op = ((OperatorToken *)currTok)->op;
     advance();
     node = make_unique<ast::BinaryExpresion>(op, std::move(node),
@@ -411,47 +411,8 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
       throw runtime_error("Unexpected variable type: " + string(*currTok));
     }
 
-    bool isPtr = false;
-    if (is_keyword(lexer::keyword_ptr)) {
-      isPtr = true;
-      advance();
-      if (!is_curr(lexer::tok_keyword)) {
-        throw runtime_error("Unexpected variable type: " + string(*currTok));
-      }
-    }
+    args.emplace_back(argname, parse_type());
 
-    // reads value type
-    ast::Primitive valtype;
-
-    switch (((KeywordToken *)currTok)->word) {
-    case lexer::keyword_f64:
-      valtype = ast::primitive_f64;
-      break;
-    case lexer::keyword_f32:
-      valtype = ast::primitive_f32;
-      break;
-    case lexer::keyword_i32:
-      valtype = ast::primitive_i32;
-      break;
-    case lexer::keyword_char:
-      valtype = ast::primitive_char;
-      break;
-    case lexer::keyword_string:
-      valtype = ast::primitive_string;
-      break;
-    case lexer::keyword_void:
-      valtype = ast::primitive_void;
-    default:
-      throw runtime_error("Unknown type: " + string(*currTok));
-    }
-
-    if (isPtr) {
-      valtype = ast::primitive_to_ptr(valtype);
-    }
-
-    args.emplace_back(argname, valtype);
-
-    advance();
     if (is_op(lexer::op_comma)) {
       advance();
     } else {
@@ -468,35 +429,55 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
   if (is_op(lexer::op_colon)) {
     advance();
 
-    if (!is_curr(lexer::tok_keyword)) {
-      err_unexpected_tok("Keyword");
-    }
-    switch (((KeywordToken *)currTok)->word) {
-    case lexer::keyword_f64:
-      returntype = ast::primitive_f64;
-      break;
-    case lexer::keyword_f32:
-      returntype = ast::primitive_f32;
-      break;
-    case lexer::keyword_i32:
-      returntype = ast::primitive_i32;
-      break;
-    case lexer::keyword_char:
-      returntype = ast::primitive_char;
-      break;
-    case lexer::keyword_string:
-      returntype = ast::primitive_string;
-      break;
-    case lexer::keyword_void:
+    returntype = parse_type();
+    if (returntype == ast::primitive_invalid) {
       returntype = ast::primitive_void;
-      break;
-    default:
-      throw runtime_error("Unknown type: " + string(*currTok));
     }
-    advance();
   }
 
   return make_unique<ast::Prototype>(name, returntype, args);
+}
+
+ast::Primitive Parser::parse_type() {
+  int isPtr = 0;
+  while (is_keyword(lexer::keyword_ptr)) {
+    isPtr++;
+    advance();
+    if (!is_curr(lexer::tok_keyword)) {
+      return ast::primitive_invalid;
+    }
+  }
+
+  // reads value type
+  ast::Primitive valtype;
+
+  switch (((KeywordToken *)currTok)->word) {
+  case lexer::keyword_f64:
+    valtype = ast::primitive_f64;
+    break;
+  case lexer::keyword_f32:
+    valtype = ast::primitive_f32;
+    break;
+  case lexer::keyword_i32:
+    valtype = ast::primitive_i32;
+    break;
+  case lexer::keyword_char:
+    valtype = ast::primitive_char;
+    break;
+  case lexer::keyword_string:
+    valtype = ast::primitive_string;
+    break;
+  case lexer::keyword_void:
+    valtype = ast::primitive_void;
+  default:
+    return ast::Primitive::primitive_invalid;
+  }
+  advance();
+
+  if (isPtr) {
+    valtype = ast::primitive_to_ptr(valtype);
+  }
+  return valtype;
 }
 
 vector<unique_ptr<ast::Expression>> Parser::parse() {
@@ -544,6 +525,9 @@ ast::Primitive keyword_to_primitive(Keyword word, bool isptr) {
     break;
   case lexer::keyword_void:
     prim = ast::primitive_void;
+    break;
+  case lexer::keyword_bool:
+    prim = ast::primitive_bool;
     break;
   default:
     throw string("Unknown type: " + string(KeywordToken(word)));

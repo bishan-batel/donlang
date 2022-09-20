@@ -15,6 +15,7 @@
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 
+#include <streambuf>
 #include <tuple>
 #include <utility>
 
@@ -37,57 +38,6 @@ CGContext::CGContext(unique_ptr<LLVMContext> &ctx,
 
 namespace parser::ast {
 Expression::operator string() const { return "NULL Expression"; }
-
-/**
- * Number Expressions
- */
-
-// Doubles
-NumberF64Expression::NumberF64Expression(double val) : value(val) {}
-
-NumberF64Expression::operator string() const { return to_string(value); }
-
-Value *NumberF64Expression::codegen(codegen::CGContext &ctx) {
-  return ConstantFP::get(**ctx.llvm, APFloat(value));
-}
-
-// Floats
-NumberF32Expression::NumberF32Expression(float val) : value(val) {}
-
-NumberF32Expression::operator string() const { return to_string(value); }
-
-Value *NumberF32Expression::codegen(codegen::CGContext &ctx) {
-  return ConstantFP::get(**ctx.llvm, APFloat(value));
-}
-
-// Integer (32 bit)
-NumberI32Expression::NumberI32Expression(int val) : value(val) {}
-
-NumberI32Expression::operator string() const { return to_string(value); }
-
-Value *NumberI32Expression::codegen(codegen::CGContext &ctx) {
-  return ConstantInt::get(**ctx.llvm, APInt(8 * sizeof(int), value));
-}
-
-// Integer (8 bit)
-NumberI8Expression::NumberI8Expression(char val) : value(val) {}
-
-NumberI8Expression::operator string() const { return to_string(value); }
-
-Value *NumberI8Expression::codegen(codegen::CGContext &ctx) {
-  return ConstantInt::get(**ctx.llvm, APInt(8 * sizeof(char), value));
-}
-
-/**
- *  String Expression
- */
-StringExpression::StringExpression(string val) : value(std::move(val)) {}
-
-StringExpression::operator string() const { return '"' + (value) + '"'; }
-
-Value *StringExpression::codegen(codegen::CGContext &ctx) {
-  return ctx.builder->get()->CreateGlobalStringPtr(value);
-}
 
 /**
  * Variable Expression
@@ -153,32 +103,6 @@ Value *ReturnExpression::codegen(codegen::CGContext &ctx) {
 }
 
 /**
- * Cast Expression
- */
-CastExpression::CastExpression(unique_ptr<Expression> expr, Primitive type)
-    : expression(std::move(expr)), type(std::move(type)) {}
-
-CastExpression::operator string() const {
-  return "cast[" + string(*expression) + " to " + to_string(type) + "]";
-}
-
-Value *CastExpression::codegen(codegen::CGContext &ctx) {
-  auto expr = expression->codegen(ctx);
-  if (expr == nullptr) {
-    throw string("Cannot cast null expression");
-  }
-
-  switch (type) {
-  case primitive_i64:
-    return ctx.builder->get()->CreateFPToSI(expr, Type::getInt64Ty(**ctx.llvm));
-  case primitive_i32:
-    return ctx.builder->get()->CreateFPToSI(expr, Type::getInt32Ty(**ctx.llvm));
-  default:
-    throw runtime_error("Cannot cast to unknown type");
-  }
-}
-
-/**
  * Binary Expression
  */
 BinaryExpresion::BinaryExpresion(lexer::Operator op, unique_ptr<Expression> lhs,
@@ -194,50 +118,94 @@ Value *BinaryExpresion::codegen(codegen::CGContext &ctx) {
   if (lhs == nullptr) {
     throw runtime_error("LHS is null");
   }
+
   Value *lhs_val = lhs->codegen(ctx);
 
   if (rhs == nullptr) {
     return lhs_val;
   }
 
-  Value *rhs_val = rhs->codegen(ctx);
+  // variable value storing
+  if (op == lexer::op_assign) {
+    if (auto var = dynamic_cast<VariableExpression *>(lhs.get())) {
+      return ctx.builder->get()->CreateStore(rhs->codegen(ctx),
+                                             ctx.namedValues[var->name]);
+    }
+  }
 
   if (lhs_val == nullptr) {
     throw runtime_error("Invalid binary expression: lhs is null");
   }
 
+  Value *rhs_val = rhs->codegen(ctx);
   if (rhs_val == nullptr) {
     throw runtime_error("Invalid binary expression: rhs is null");
   }
 
-  switch (op) {
-  case lexer::op_plus:
-    return ctx.builder->get()->CreateAdd(lhs_val, rhs_val, "addtmp");
-  case lexer::op_minus:
-    return ctx.builder->get()->CreateSub(lhs_val, rhs_val, "subtmp");
-  case lexer::op_mul:
-    return ctx.builder->get()->CreateMul(lhs_val, rhs_val, "multmp");
-  case lexer::op_div:
-    return ctx.builder->get()->CreateFDiv(lhs_val, rhs_val, "divtmp");
-  case lexer::op_mod:
-    return ctx.builder->get()->CreateFRem(lhs_val, rhs_val, "modtmp");
-  case lexer::op_greater_than:
-    return ctx.builder->get()->CreateFCmpUGT(lhs_val, rhs_val, "gttmp");
-  case lexer::op_less_than:
-    return ctx.builder->get()->CreateFCmpULT(lhs_val, rhs_val, "lttmp");
-  case lexer::op_set:
-    return ctx.builder->get()->CreateFCmpUEQ(lhs_val, rhs_val, "eqtmp");
-  case lexer::op_eq:
-    // check of lhs is a variable expression
-    if (auto var = dynamic_cast<VariableExpression *>(lhs.get())) {
-      ctx.builder->get()->CreateStore(rhs_val, var->codegen(ctx));
-      break;
-    } else {
-      throw string("Invalid binary expression, lhs is not a variable");
+  if (rhs_val->getType() != lhs_val->getType()) {
+    throw runtime_error("Invalid binary expression: types mismatch");
+
+    // attempt to cast
+    rhs_val =
+        CastExpression(std::move(rhs), primitive_from_type(rhs_val->getType()))
+            .codegen(ctx);
+  }
+
+  /**
+   * INTEGER OPERATIONS
+   */
+  if (lhs_val->getType()->isIntegerTy()) {
+    switch (op) {
+    case lexer::op_plus:
+      return ctx.builder->get()->CreateAdd(lhs_val, rhs_val, "addtmp");
+    case lexer::op_minus:
+      return ctx.builder->get()->CreateSub(lhs_val, rhs_val, "subtmp");
+    case lexer::op_mul:
+      return ctx.builder->get()->CreateMul(lhs_val, rhs_val, "multmp");
+    case lexer::op_div:
+      return ctx.builder->get()->CreateSDiv(lhs_val, rhs_val, "divtmp");
+    case lexer::op_mod:
+      return ctx.builder->get()->CreateSRem(lhs_val, rhs_val, "modtmp");
+    case lexer::op_greater_than:
+      return ctx.builder->get()->CreateICmpSGT(lhs_val, rhs_val, "gttmp");
+    case lexer::op_less_than:
+      return ctx.builder->get()->CreateICmpSLT(lhs_val, rhs_val, "lttmp");
+    case lexer::op_equal:
+      return ctx.builder->get()->CreateICmpEQ(lhs_val, rhs_val, "eqtmp");
+
+    default:
+      throw string("Invalid binary expression, operator not supported for "
+                   "integer values (" +
+                   string(lexer::OperatorToken(op)) + ")");
     }
-  default:
-    throw string("Invalid binary expression, operator not supported (" +
-                 string(lexer::OperatorToken(op)) + ")");
+  } else if (lhs_val->getType()->isFloatingPointTy()) {
+    /**
+     * FLOAT OPERATIONS
+     */
+    switch (op) {
+    case lexer::op_plus:
+      return ctx.builder->get()->CreateFAdd(lhs_val, rhs_val, "addtmp");
+    case lexer::op_minus:
+      return ctx.builder->get()->CreateFSub(lhs_val, rhs_val, "subtmp");
+    case lexer::op_mul:
+      return ctx.builder->get()->CreateFMul(lhs_val, rhs_val, "multmp");
+    case lexer::op_div:
+      return ctx.builder->get()->CreateFDiv(lhs_val, rhs_val, "divtmp");
+    case lexer::op_mod:
+      return ctx.builder->get()->CreateFRem(lhs_val, rhs_val, "modtmp");
+    case lexer::op_greater_than:
+      return ctx.builder->get()->CreateFCmpOGT(lhs_val, rhs_val, "gttmp");
+    case lexer::op_less_than:
+      return ctx.builder->get()->CreateFCmpOLT(lhs_val, rhs_val, "lttmp");
+    case lexer::op_equal:
+      return ctx.builder->get()->CreateFCmpOEQ(lhs_val, rhs_val, "eqtmp");
+    default:
+      throw string("Invalid binary expression, operator not supported for "
+                   "floating point values (" +
+                   string(lexer::OperatorToken(op)) + ")");
+    }
+  } else {
+    throw string("Invalid binary expression, unsupported type");
   }
   return nullptr;
 }
@@ -271,10 +239,8 @@ Value *parser::ast::UnaryExpression::codegen(codegen::CGContext &ctx) {
     return ctx.builder->get()->CreateNot(expr_val, "nottmp");
   case lexer::op_ref:
     // check if expression is a variable expression
-    if (auto var = (VariableExpression *)(expression.get())) {
-      auto name = ((VariableExpression *)expression.get())->name;
-      auto alloca = (AllocaInst *)ctx.namedValues[name];
-      return alloca;
+    if (auto var = dynamic_cast<VariableExpression *>(expression.get())) {
+      return (AllocaInst *)ctx.namedValues[var->name];
       // return ctx.builder->get()->CreateLoad(alloca->getAllocatedType(),
       // alloca, "reftmp");
     } else {
@@ -317,7 +283,7 @@ Value *CallExpression::codegen(codegen::CGContext &ctx) {
   for (unsigned i = 0, e = args.size(); i != e; ++i) {
     arg_vals.push_back(args[i]->codegen(ctx));
     if (!arg_vals.back()) {
-      throw runtime_error("Invalid argument passed to function");
+      throw string("Invalid argument passed to function " + string(name));
     }
   }
 
@@ -491,145 +457,164 @@ Prototype::operator string() const {
   return str;
 }
 
+Primitive primitive_from_type(Type *type) {
+  if (type->isDoubleTy()) {
+    return primitive_f64;
+  } else if (type->isFloatTy()) {
+    return primitive_f32;
+  } else if (type->isVoidTy()) {
+    return primitive_void;
+  } else if (type->isIntegerTy(64)) {
+    return primitive_i64;
+  } else if (type->isIntegerTy(32)) {
+    return primitive_i32;
+  } else if (type->isIntegerTy(8)) {
+    return primitive_char;
+  } else if (type->isIntegerTy(1)) {
+    return primitive_bool;
+  } else {
+    throw runtime_error("Unknown primitive type");
+  }
+}
+
 llvm::Type *primitive_to_type(codegen::CGContext &ctx, Primitive prim) {
   auto isptr = ast::is_primitive_ptr(prim);
-  if (isptr) 
+  if (isptr)
     prim = ast::primitive_flip_ptr(prim);
-  
 
-    Type *ty;
-    switch (prim) {
-    case Primitive::primitive_f64:
-      ty = Type::getDoubleTy(**ctx.llvm);
-      break;
-    case Primitive::primitive_f32:
-      ty = Type::getFloatTy(**ctx.llvm);
-      break;
-    case Primitive::primitive_char:
-      ty = Type::getInt8Ty(**ctx.llvm);
-      break;
-    case Primitive::primitive_string:
-      ty = Type::getInt8PtrTy(**ctx.llvm);
-      break;
-    case Primitive::primitive_void:
-      ty = Type::getVoidTy(**ctx.llvm);
-      break;
-    case Primitive::primitive_i64:
-      ty = Type::getInt64Ty(**ctx.llvm);
-      break;
-    case Primitive::primitive_i32:
-      ty = Type::getInt32Ty(**ctx.llvm);
-      break;
-    case Primitive::primitive_bool:
-      ty = Type::getInt1Ty(**ctx.llvm);
-      break;
-    default:
-      throw "Invalid primitive type: " + to_string(prim) + ", " +
-          to_string(parser::ast::primitive_flip_ptr(prim));
-    }
-
-    if (isptr) {
-      ty = ty->getPointerTo();
-    }
-    return ty;
+  Type *ty;
+  switch (prim) {
+  case Primitive::primitive_f64:
+    ty = Type::getDoubleTy(**ctx.llvm);
+    break;
+  case Primitive::primitive_f32:
+    ty = Type::getFloatTy(**ctx.llvm);
+    break;
+  case Primitive::primitive_char:
+    ty = Type::getInt8Ty(**ctx.llvm);
+    break;
+  case Primitive::primitive_string:
+    ty = Type::getInt8PtrTy(**ctx.llvm);
+    break;
+  case Primitive::primitive_void:
+    ty = Type::getVoidTy(**ctx.llvm);
+    break;
+  case Primitive::primitive_i64:
+    ty = Type::getInt64Ty(**ctx.llvm);
+    break;
+  case Primitive::primitive_i32:
+    ty = Type::getInt32Ty(**ctx.llvm);
+    break;
+  case Primitive::primitive_bool:
+    ty = Type::getInt1Ty(**ctx.llvm);
+    break;
+  default:
+    throw "Invalid primitive type: " + to_string(prim) + ", " +
+        to_string(parser::ast::primitive_flip_ptr(prim));
   }
 
-  llvm::Function *Prototype::codegen(codegen::CGContext & ctx) {
-    vector<Type *> arg_types;
+  if (isptr) {
+    ty = ty->getPointerTo();
+  }
+  return ty;
+}
 
-    for (auto arg : args) {
-      arg_types.push_back(primitive_to_type(ctx, get<1>(arg)));
-    }
+llvm::Function *Prototype::codegen(codegen::CGContext &ctx) {
+  vector<Type *> arg_types;
 
-    auto func_type =
-        FunctionType::get(primitive_to_type(ctx, returntype), arg_types, false);
-    auto func = llvm::Function::Create(
-        func_type, llvm::Function::ExternalLinkage, name, *ctx.module->get());
-
-    int idx = 0;
-    for (auto &arg : func->args()) {
-      arg.setName(get<0>(args[idx++]));
-    }
-
-    return func;
+  for (auto arg : args) {
+    arg_types.push_back(primitive_to_type(ctx, get<1>(arg)));
   }
 
-  Prototype::~Prototype() {}
+  auto func_type =
+      FunctionType::get(primitive_to_type(ctx, returntype), arg_types, false);
+  auto func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage,
+                                     name, *ctx.module->get());
 
-  /**
-   * Function
-   */
-  Function::Function(unique_ptr<Prototype> proto,
-                     vector<unique_ptr<Expression>> body)
-      : proto(std::move(proto)), body(std::move(body)) {}
-
-  Function::operator string() const {
-    string str = "Function:\n\t" + string(*proto);
-    str += "\nBody:\n";
-    for (auto &expr : body) {
-      if (expr != nullptr) {
-        str += "\t" + string(*expr) + "\n";
-      }
-    }
-    return str;
+  int idx = 0;
+  for (auto &arg : func->args()) {
+    arg.setName(get<0>(args[idx++]));
   }
 
-  Value *Function::codegen(codegen::CGContext & ctx) {
-    auto func = proto->codegen(ctx);
-    if (func == nullptr) {
-      return nullptr;
+  return func;
+}
+
+Prototype::~Prototype() {}
+
+/**
+ * Function
+ */
+Function::Function(unique_ptr<Prototype> proto,
+                   vector<unique_ptr<Expression>> body)
+    : proto(std::move(proto)), body(std::move(body)) {}
+
+Function::operator string() const {
+  string str = "Function:\n\t" + string(*proto);
+  str += "\nBody:\n";
+  for (auto &expr : body) {
+    if (expr != nullptr) {
+      str += "\t" + string(*expr) + "\n";
     }
+  }
+  return str;
+}
 
-    auto bb = BasicBlock::Create(**ctx.llvm, "entry", func);
-    ctx.builder->get()->SetInsertPoint(bb);
-
-    // add arguments to namedValues
-    for (auto &arg : func->args()) {
-      // ctx.namedValues[arg.getName().str()] = &arg;
-
-      // create an alloca for this variable
-      AllocaInst *alloca = ctx.builder->get()->CreateAlloca(
-          arg.getType(), 0, arg.getName().str().c_str());
-
-      // store the initial value into the alloca
-      ctx.builder->get()->CreateStore(&arg, alloca);
-
-      // add the alloca to the symbol table
-      ctx.namedValues[arg.getName().str()] = alloca;
-    }
-
-    for (auto &expr : body) {
-      if (expr != nullptr) {
-        expr->codegen(ctx);
-      }
-    }
-
-    // remove arguments from named values
-    for (auto &arg : func->args()) {
-      ctx.namedValues[arg.getName().str()] = nullptr;
-    }
-
-    if (ctx.builder->get()->GetInsertBlock()->getTerminator() == nullptr) {
-      ctx.builder->get()->CreateRetVoid();
-    }
-    return func;
+Value *Function::codegen(codegen::CGContext &ctx) {
+  auto func = proto->codegen(ctx);
+  if (func == nullptr) {
+    return nullptr;
   }
 
-  /**
-   * ExternFunction
-   */
+  auto bb = BasicBlock::Create(**ctx.llvm, "entry", func);
+  ctx.builder->get()->SetInsertPoint(bb);
 
-  ExternFunction::ExternFunction(unique_ptr<Prototype> proto)
-      : proto(std::move(proto)) {}
+  // add arguments to namedValues
+  for (auto &arg : func->args()) {
+    // ctx.namedValues[arg.getName().str()] = &arg;
 
-  ExternFunction::operator string() const {
-    return "Extern Function:\n\t" + string(*proto);
+    // create an alloca for this variable
+    AllocaInst *alloca = ctx.builder->get()->CreateAlloca(
+        arg.getType(), 0, arg.getName().str().c_str());
+
+    // store the initial value into the alloca
+    ctx.builder->get()->CreateStore(&arg, alloca);
+
+    // add the alloca to the symbol table
+    ctx.namedValues[arg.getName().str()] = alloca;
   }
 
-  Value *ExternFunction::codegen(codegen::CGContext & ctx) {
-    return proto->codegen(ctx);
+  for (auto &expr : body) {
+    if (expr != nullptr) {
+      expr->codegen(ctx);
+    }
   }
 
-  void add_default_functions(codegen::CGContext & ctx) {}
+  // remove arguments from named values
+  for (auto &arg : func->args()) {
+    ctx.namedValues[arg.getName().str()] = nullptr;
+  }
+
+  if (ctx.builder->get()->GetInsertBlock()->getTerminator() == nullptr) {
+    ctx.builder->get()->CreateRetVoid();
+  }
+  return func;
+}
+
+/**
+ * ExternFunction
+ */
+
+ExternFunction::ExternFunction(unique_ptr<Prototype> proto)
+    : proto(std::move(proto)) {}
+
+ExternFunction::operator string() const {
+  return "Extern Function:\n\t" + string(*proto);
+}
+
+Value *ExternFunction::codegen(codegen::CGContext &ctx) {
+  return proto->codegen(ctx);
+}
+
+void add_default_functions(codegen::CGContext &ctx) {}
 
 } // namespace parser::ast

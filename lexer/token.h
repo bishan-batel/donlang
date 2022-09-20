@@ -26,19 +26,20 @@ enum Keyword : char {
   keyword_ref,
   keyword_as,
   keyword_while,
+  keyword_bool
 };
 
 static const map<string, Keyword> KEYWORD_MAP{
     {"def", keyword_def},       {"return", keyword_return},
     {"i32", keyword_i32},       {"f32", keyword_f32},
     {"i8", keyword_char},       {"f64", keyword_f64},
-    {"char", keyword_char},     {"void", keyword_void},
-    {"var", keyword_var},       {"let", keyword_let},
-    {"extern", keyword_extern}, {"string", keyword_string},
-    {"if", keyword_if},         {"else", keyword_else},
-    {"ptr", keyword_ptr},       {"ref", keyword_ref},
-    {"is", keyword_is},         {"as", keyword_as},
-    {"while", keyword_while}};
+    {"bool", keyword_bool},     {"char", keyword_char},
+    {"void", keyword_void},     {"var", keyword_var},
+    {"let", keyword_let},       {"extern", keyword_extern},
+    {"string", keyword_string}, {"if", keyword_if},
+    {"else", keyword_else},     {"ptr", keyword_ptr},
+    {"ref", keyword_ref},       {"is", keyword_is},
+    {"as", keyword_as},         {"while", keyword_while}};
 
 enum Operator : char {
   op_invalid = -1,
@@ -52,7 +53,7 @@ enum Operator : char {
   op_minus,
   op_div,
   op_mul,
-  op_eq,
+  op_assign,
   op_pipe,
   op_caret,
   op_ampersand,
@@ -65,14 +66,14 @@ enum Operator : char {
   op_less_than,
   op_ptr,
   op_ref,
-  op_set
+  op_equal
 };
 
 static const map<char, Operator> OPERATOR_MAP{
     {'(', op_openparen},  {')', op_closeparen},   {'{', op_opencurly},
     {'}', op_closecurly}, {'[', op_openbracket},  {']', op_closebracket},
     {'+', op_plus},       {'-', op_minus},        {'/', op_div},
-    {'=', op_eq},         {'*', op_mul},          {'|', op_pipe},
+    {'=', op_assign},     {'*', op_mul},          {'|', op_pipe},
     {'^', op_caret},      {'&', op_ampersand},    {'!', op_not},
     {'%', op_mod},        {':', op_colon},        {'.', op_dot},
     {',', op_comma},      {'>', op_greater_than}, {'<', op_less_than}};

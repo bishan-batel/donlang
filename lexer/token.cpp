@@ -41,7 +41,7 @@ OperatorToken::operator string() const {
       return string(1, p.first);
     }
   }
-  return "NULL Operator";
+  return "NULL Operator, " + to_string(op);
 }
 
 F64Literal::F64Literal(double f) : Token(tok_double), literal(f) {}

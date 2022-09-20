@@ -40,6 +40,7 @@ namespace parser {
     unique_ptr<ast::Expression> parse_expression_mul();
     unique_ptr<ast::Expression> parse_expression_cast();
     unique_ptr<ast::Expression> parse_exppression_factor();
+    ast::Primitive parse_type();
 
     inline void err_unexpected_tok(const string& expected);
 
