@@ -300,4 +300,42 @@ public:
 llvm::Type *primitive_to_type(codegen::CGContext &ctx, Primitive prim);
 Primitive primitive_from_type(Type *type);
 
+// Classes
+class ClassDefinition : public Expression {
+  string name;
+  vector<unique_ptr<Expression>> body;
+
+public:
+  ClassDefinition(string name, vector<unique_ptr<Expression>> body);
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
+};
+
+class ClassAttribute : public Expression {
+  string name;
+  unique_ptr<Expression> expression;
+  Primitive type;
+
+public:
+  ClassAttribute(string name, unique_ptr<Expression> expression);
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
+};
+
+class ClassConstructor : public Expression {
+  string name;
+  vector<unique_ptr<Expression>> args;
+
+public:
+  ClassConstructor(string name, vector<unique_ptr<Expression>> args);
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
+};
+
 } // namespace parser::ast

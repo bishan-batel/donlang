@@ -4,6 +4,7 @@ add_library(
   ast.cpp
   literals.cpp
   casting.cpp
+  classes.cpp
 )
 
 target_include_directories(ast PUBLIC "${CMAKE_SOURCE_DIR}")

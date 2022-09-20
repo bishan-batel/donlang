@@ -4,8 +4,8 @@
 #include <iostream>
 #include <jit/JIT.h>
 #include <lexer/lexer.h>
-#include <llvm/Target/TargetMachine.h>
 #include <llvm/Analysis/LoopInfo.h>
+#include <llvm/Bitcode/BitcodeWriter.h>
 #include <llvm/ExecutionEngine/MCJIT.h>
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
 #include <llvm/IR/Function.h>
@@ -16,24 +16,24 @@
 #include <llvm/Pass.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/Error.h>
-#include <llvm/Bitcode/BitcodeWriter.h>
+#include <llvm/Target/TargetMachine.h>
 #include <parser/parser.h>
 #include <sstream>
+#include <stdio.h>
 #include <string>
 #include <utils/stringutils.h>
-#include <stdio.h>
 
 using namespace std;
 
 static cl::opt<bool> PrintIR("p", cl::desc("Print the IR"), cl::init(false));
 
 static cl::opt<std::string> InputFileName(cl::Positional,
-  cl::desc("<input file>"));
+                                          cl::desc("<input file>"));
 
 static cl::opt<std::string> OutputFileName("o", cl::desc("<output ll file>"),
-  cl::init("a.ll"));
+                                           cl::init("a.ll"));
 
-int main(int nargs, const char* argv[]) {
+int main(int nargs, const char *argv[]) {
   // init CL
   //
   fopen("a.ll", "w");
@@ -68,11 +68,10 @@ int main(int nargs, const char* argv[]) {
 
   parser::ast::add_default_functions(ctx);
   try {
-    for (auto& expr : ast) {
+    for (auto &expr : ast) {
       expr->codegen(ctx);
     }
-  }
-  catch (string ex) {
+  } catch (string ex) {
     cout << "[ERROR CODEGEN]: " << ex << endl;
     return 1;
   }
