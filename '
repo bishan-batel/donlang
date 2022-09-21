@@ -49,14 +49,14 @@ VariableExpression::VariableExpression(string name) : name(std::move(name)) {}
 VariableExpression::operator string() const { return "variable[" + name + "]"; }
 
 Value *VariableExpression::codegen(codegen::CGContext &ctx) {
-  AllocaInst *alloca = ctx.namedValues[name];
-  if (alloca == nullptr) {
+  AllocaInst *v = ctx.namedValues[name];
+  if (v == nullptr) {
     throw "Unknown variable used: \"" + name + '\"';
   }
 
-  return ctx.builder->get()->CreateLoad(alloca->getAllocatedType(), alloca,
-                                        alloca->getName());
-  // return alloca;
+  LoadInst *a =
+      ctx.builder->get()->CreateLoad(v->getAllocatedType(), v, v->getName());
+  return a;
 }
 
 /**
@@ -146,6 +146,11 @@ Value *BinaryExpresion::codegen(codegen::CGContext &ctx) {
 
   if (rhs_val->getType() != lhs_val->getType()) {
     throw runtime_error("Invalid binary expression: types mismatch");
+
+    // attempt to cast
+    rhs_val =
+        CastExpression(std::move(rhs), primitive_from_type(rhs_val->getType()))
+            .codegen(ctx);
   }
 
   /**
@@ -439,9 +444,8 @@ Value *WhileExpression::codegen(codegen::CGContext &ctx) {
  * Function Prototype
  */
 Prototype::Prototype(string name, Primitive returntype,
-                     vector<tuple<string, Primitive>> args, bool varargs)
-    : name(std::move(name)), args(std::move(args)), returntype(returntype),
-      varargs(varargs) {}
+                     vector<tuple<string, Primitive>> args)
+    : name(std::move(name)), args(std::move(args)), returntype(returntype) {}
 
 string Prototype::getName() const { return name; }
 
@@ -525,7 +529,7 @@ llvm::Function *Prototype::codegen(codegen::CGContext &ctx) {
   }
 
   auto func_type =
-      FunctionType::get(primitive_to_type(ctx, returntype), arg_types, varargs);
+      FunctionType::get(primitive_to_type(ctx, returntype), arg_types, false);
   auto func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage,
                                      name, *ctx.module->get());
 

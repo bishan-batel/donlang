@@ -1,0 +1,10 @@
+extern puts(s: string): i32
+extern printf(s: string): i32
+extern printf(s: string, multiple a: i32)
+extern printf(s: string, a: string)
+
+def main(): i32 {
+  printf("A: %d", 10)
+
+  return 0
+}

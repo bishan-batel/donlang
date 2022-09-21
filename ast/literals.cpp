@@ -50,5 +50,6 @@ StringExpression::operator string() const { return '"' + (value) + '"'; }
 
 Value *StringExpression::codegen(codegen::CGContext &ctx) {
   return ctx.builder->get()->CreateGlobalStringPtr(value);
+  //return ConstantDataArray::getString(**ctx.llvm, value);
 }
 } // namespace parser::ast

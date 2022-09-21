@@ -12,6 +12,7 @@ enum Keyword : char {
   // Function
   keyword_def,
   keyword_extern,
+  keyword_varargs,
 
   // Types
   keyword_i32,
@@ -40,6 +41,7 @@ enum Keyword : char {
   keyword_if,
   keyword_else,
   keyword_return,
+  keyword_unsafe,
 
   // loops
   keyword_while,
@@ -63,38 +65,23 @@ enum Keyword : char {
 };
 
 static const map<string, Keyword> KEYWORD_MAP{
-    {"def", keyword_def},
-    {"extern", keyword_extern},
-    {"i32", keyword_i32},
-    {"f32", keyword_f32},
-    {"f64", keyword_f64},
-    {"char", keyword_char},
-    {"void", keyword_void},
-    {"string", keyword_string},
-    {"bool", keyword_bool},
-    {"var", keyword_var},
-    {"let", keyword_let},
-    {"is", keyword_is},
-    {"and", keyword_and},
-    {"not", keyword_not},
-    {"ptr", keyword_ptr},
-    {"ref", keyword_ref},
-    {"as", keyword_as},
-    {"if", keyword_if},
-    {"else", keyword_else},
-    {"return", keyword_return},
-    {"while", keyword_while},
-    {"for", keyword_for},
-    {"true", keyword_true},
-    {"false", keyword_false},
-    {"class", keyword_class},
-    {"data", keyword_data},
-    {"constructor", keyword_constructor},
-    {"self", keyword_self},
-    {"package", keyword_package},
-    {"import", keyword_import},
-    {"export", keyword_export},
-    {"from", keyword_from}};
+    {"def", keyword_def},       {"extern", keyword_extern},
+    {"i32", keyword_i32},       {"f32", keyword_f32},
+    {"f64", keyword_f64},       {"char", keyword_char},
+    {"void", keyword_void},     {"string", keyword_string},
+    {"bool", keyword_bool},     {"var", keyword_var},
+    {"let", keyword_let},       {"is", keyword_is},
+    {"and", keyword_and},       {"not", keyword_not},
+    {"ptr", keyword_ptr},       {"ref", keyword_ref},
+    {"as", keyword_as},         {"if", keyword_if},
+    {"else", keyword_else},     {"return", keyword_return},
+    {"unsafe", keyword_unsafe}, {"while", keyword_while},
+    {"for", keyword_for},       {"true", keyword_true},
+    {"false", keyword_false},   {"class", keyword_class},
+    {"data", keyword_data},     {"constructor", keyword_constructor},
+    {"self", keyword_self},     {"package", keyword_package},
+    {"import", keyword_import}, {"export", keyword_export},
+    {"from", keyword_from}, {"multiple", keyword_varargs}};
 
 enum Operator : char {
   op_invalid = -1,

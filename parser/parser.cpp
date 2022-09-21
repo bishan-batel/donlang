@@ -398,7 +398,9 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
   // read each argument
   advance();
 
+  bool varargs = false;
   while (is_curr(lexer::tok_identifier)) {
+
     auto argname = ((IdentifierToken *)currTok)->ident;
 
     advance();
@@ -407,6 +409,10 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
     }
 
     advance();
+
+    if (is_keyword(lexer::keyword_varargs)) {
+    }
+
     if (!is_curr(lexer::tok_keyword)) {
       throw runtime_error("Unexpected variable type: " + string(*currTok));
     }
@@ -435,7 +441,7 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
     }
   }
 
-  return make_unique<ast::Prototype>(name, returntype, args);
+  return make_unique<ast::Prototype>(name, returntype, args, varargs);
 }
 
 ast::Primitive Parser::parse_type() {

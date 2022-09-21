@@ -35,9 +35,6 @@ static cl::opt<std::string> OutputFileName("o", cl::desc("<output ll file>"),
 
 int main(int nargs, const char *argv[]) {
   // init CL
-  //
-  fopen("a.ll", "w");
-
   llvm::cl::ParseCommandLineOptions(nargs, argv, "Donlang Compiler");
 
   if (InputFileName == "") {

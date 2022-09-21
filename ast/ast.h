@@ -27,15 +27,20 @@ using namespace llvm;
 namespace codegen {
 
 class CGContext {
+  bool unsafe = false;
+
 public:
   unique_ptr<LLVMContext> *llvm;
   unique_ptr<IRBuilder<>> *builder;
   unique_ptr<Module> *module;
+
   // named variables
   map<string, AllocaInst *> namedValues;
 
   explicit CGContext(unique_ptr<LLVMContext> &, unique_ptr<IRBuilder<>> &,
                      unique_ptr<Module> &);
+
+  bool isUnsafe();
 };
 }; // namespace codegen
 
@@ -261,9 +266,10 @@ public:
   string name;
   Primitive returntype;
   vector<tuple<string, Primitive>> args;
+  bool varargs;
 
   Prototype(string name, Primitive returntype,
-            vector<tuple<string, Primitive>> args);
+            vector<tuple<string, Primitive>> args, bool varargs);
 
   ~Prototype();
 
