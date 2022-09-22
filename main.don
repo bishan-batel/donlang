@@ -1,10 +1,49 @@
-extern puts(s: string): i32
-extern printf(s: string): i32
-extern printf(s: string, multiple a: i32)
-extern printf(s: string, a: string)
+package main 
+
+extern printf(fstr: string, ...): i32
+extern scanf(fstr: string, ...): i32
+
+def fizzbuzz(limit: i32) {
+  let n = 0
+  while n < limit {
+    n = n + 1
+
+    let fizz = n % 3 is 0
+    let buzz = n % 5 is 0
+
+
+    if fizz and buzz {
+      printf("FizzBuzz")
+    } else if fizz {
+      printf("Fizz")
+    } else if buzz {
+      printf("Buzz")
+    } else {
+      printf("%d", n)
+    }
+
+    printf("\n")
+  }
+}
+
+def quarts_to_gallons() {
+  let quarts = 0
+  
+  printf("Enter quarts: ")
+  scanf("%d", ref quarts)
+  printf("%d quarts is %d gallons and %d quarts\n", quarts, quarts / 4, quarts % 4)
+}
 
 def main(): i32 {
-  printf("A: %d", 10)
+  #fizzbuzz(100)
+  printf("%d");
 
+
+  let a = 0
+  # get reference to a and store it to variable b 
+  let b = ref a
+
+
+  #quarts_to_gallons()
   return 0
 }

@@ -31,6 +31,7 @@ enum Keyword : char {
   keyword_is,
   keyword_and,
   keyword_not,
+  keyword_or,
 
   // pointers / casting
   keyword_ptr,
@@ -81,7 +82,7 @@ static const map<string, Keyword> KEYWORD_MAP{
     {"data", keyword_data},     {"constructor", keyword_constructor},
     {"self", keyword_self},     {"package", keyword_package},
     {"import", keyword_import}, {"export", keyword_export},
-    {"from", keyword_from}, {"multiple", keyword_varargs}};
+    {"from", keyword_from},     {"multiple", keyword_varargs}};
 
 enum Operator : char {
   op_invalid = -1,
@@ -108,7 +109,9 @@ enum Operator : char {
   op_less_than,
   op_ptr,
   op_ref,
-  op_equal
+  op_equal,
+  op_and,
+  op_or,
 };
 
 static const map<char, Operator> OPERATOR_MAP{
@@ -118,7 +121,8 @@ static const map<char, Operator> OPERATOR_MAP{
     {'=', op_assign},     {'*', op_mul},          {'|', op_pipe},
     {'^', op_caret},      {'&', op_ampersand},    {'!', op_not},
     {'%', op_mod},        {':', op_colon},        {'.', op_dot},
-    {',', op_comma},      {'>', op_greater_than}, {'<', op_less_than}};
+    {',', op_comma},      {'>', op_greater_than}, {'<', op_less_than},
+};
 
 bool is_operator_char(char c);
 

@@ -33,7 +33,8 @@ namespace parser {
     unique_ptr<ast::Expression> parse_return();
 
     unique_ptr<ast::Expression> parse_expression();
-    unique_ptr<ast::Expression> parse_expression_set();
+    unique_ptr<ast::Expression> parse_expression_and_or();
+    unique_ptr<ast::Expression> parse_expression_is();
     unique_ptr<ast::Expression> parse_expression_compare();
     unique_ptr<ast::Expression> parse_expression_eq();
     unique_ptr<ast::Expression> parse_expression_add();

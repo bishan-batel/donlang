@@ -169,7 +169,10 @@ Value *BinaryExpresion::codegen(codegen::CGContext &ctx) {
       return ctx.builder->get()->CreateICmpSLT(lhs_val, rhs_val, "lttmp");
     case lexer::op_equal:
       return ctx.builder->get()->CreateICmpEQ(lhs_val, rhs_val, "eqtmp");
-
+    case lexer::op_or:
+      return ctx.builder->get()->CreateOr(lhs_val, rhs_val, "ortmp");
+    case lexer::op_and:
+      return ctx.builder->get()->CreateAnd(lhs_val, rhs_val, "andtmp");
     default:
       throw string("Invalid binary expression, operator not supported for "
                    "integer values (" +

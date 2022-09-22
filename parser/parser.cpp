@@ -237,10 +237,24 @@ unique_ptr<ast::Expression> Parser::parse_var_def() {
 }
 
 unique_ptr<ast::Expression> Parser::parse_expression() {
-  return parse_expression_set();
+  return parse_expression_and_or();
 }
 
-unique_ptr<ast::Expression> Parser::parse_expression_set() {
+unique_ptr<ast::Expression> Parser::parse_expression_and_or() {
+  auto node = parse_expression_is();
+
+  bool isand = is_keyword(lexer::keyword_and);
+  bool isor = is_keyword(lexer::keyword_or);
+
+  while (is_keyword(lexer::keyword_and)) {
+    advance();
+    node = make_unique<ast::BinaryExpresion>(op_and, std::move(node),
+                                             parse_expression_is());
+  }
+  return node;
+}
+
+unique_ptr<ast::Expression> Parser::parse_expression_is() {
   auto node = parse_expression_compare();
 
   while (is_keyword(lexer::keyword_is)) {
@@ -358,7 +372,7 @@ unique_ptr<ast::Expression> Parser::parse_exppression_factor() {
     advance();
     return make_unique<ast::UnaryExpression>(lexer::op_minus,
                                              parse_exppression_factor());
-  } else if (is_op(lexer::op_not)) {
+  } else if (is_op(lexer::op_not) || is_keyword(lexer::keyword_not)) {
     // Unary not
     advance();
     return make_unique<ast::UnaryExpression>(lexer::op_not,
@@ -399,7 +413,7 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
   advance();
 
   bool varargs = false;
-  while (is_curr(lexer::tok_identifier)) {
+  while (!varargs && is_curr(lexer::tok_identifier)) {
 
     auto argname = ((IdentifierToken *)currTok)->ident;
 
@@ -410,9 +424,6 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
 
     advance();
 
-    if (is_keyword(lexer::keyword_varargs)) {
-    }
-
     if (!is_curr(lexer::tok_keyword)) {
       throw runtime_error("Unexpected variable type: " + string(*currTok));
     }
@@ -421,6 +432,18 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
 
     if (is_op(lexer::op_comma)) {
       advance();
+
+      if (is_op(lexer::op_dot)) {
+        for (int i = 0; i < 2; i++) {
+          if (!is_op(lexer::op_dot)) {
+            err_unexpected_tok("identifier");
+          };
+          advance();
+        }
+        advance();
+        varargs = true;
+      }
+
     } else {
       break;
     }

@@ -103,6 +103,16 @@ bool Lexer::comment() {
   if (currentChar() != '#')
     return false;
 
+  if (nextChar() == ':') {
+    while (nextChar() != EOF) {
+      if (currentChar() == ':' && nextChar() == '#') {
+        nextChar();
+        return true;
+      }
+    }
+    return true;
+  }
+
   while (nextChar() != EOF && currentChar() != '\n') {
   }
   idx++;
