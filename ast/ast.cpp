@@ -72,13 +72,13 @@ VariableDefinition::operator string() const {
 
 Value *VariableDefinition::codegen(codegen::CGContext &ctx) {
   if (expression == nullptr) {
-    throw runtime_error("Variable '" + name + "' is uninitialized");
+    throw string("Variable '" + name + "' is uninitialized");
   }
 
   auto expr_val = expression->codegen(ctx);
 
   if (expr_val == nullptr) {
-    throw runtime_error("Variable '" + name + "' is uninitialized");
+    throw string("Variable '" + name + "' is uninitialized");
   }
 
   AllocaInst *alloca =
@@ -118,7 +118,7 @@ BinaryExpresion::operator string() const {
 
 Value *BinaryExpresion::codegen(codegen::CGContext &ctx) {
   if (lhs == nullptr) {
-    throw runtime_error("LHS is null");
+    throw string("LHS is null");
   }
 
   Value *lhs_val = lhs->codegen(ctx);
@@ -136,16 +136,16 @@ Value *BinaryExpresion::codegen(codegen::CGContext &ctx) {
   }
 
   if (lhs_val == nullptr) {
-    throw runtime_error("Invalid binary expression: lhs is null");
+    throw string("Invalid binary expression: lhs is null");
   }
 
   Value *rhs_val = rhs->codegen(ctx);
   if (rhs_val == nullptr) {
-    throw runtime_error("Invalid binary expression: rhs is null");
+    throw string("Invalid binary expression: rhs is null");
   }
 
   if (rhs_val->getType() != lhs_val->getType()) {
-    throw runtime_error("Invalid binary expression: types mismatch");
+    throw string("Invalid binary expression: types mismatch");
   }
 
   /**
@@ -223,13 +223,13 @@ UnaryExpression::operator string() const {
 
 Value *parser::ast::UnaryExpression::codegen(codegen::CGContext &ctx) {
   if (expression == nullptr) {
-    throw runtime_error("Unary expression is null");
+    throw string("Unary expression is null");
   }
 
   Value *expr_val = expression->codegen(ctx);
 
   if (expr_val == nullptr) {
-    throw runtime_error("Invalid unary expression: expr is null");
+    throw string("Invalid unary expression: expr is null");
   }
 
   switch (op) {
@@ -237,15 +237,13 @@ Value *parser::ast::UnaryExpression::codegen(codegen::CGContext &ctx) {
     return ctx.builder->get()->CreateFNeg(expr_val, "negtmp");
   case lexer::op_not:
     return ctx.builder->get()->CreateNot(expr_val, "nottmp");
+  case lexer::op_plus:
+    return expr_val;
   case lexer::op_ref:
-    // check if expression is a variable expression
-    if (auto var = dynamic_cast<VariableExpression *>(expression.get())) {
-      return (AllocaInst *)ctx.namedValues[var->name];
-      // return ctx.builder->get()->CreateLoad(alloca->getAllocatedType(),
-      // alloca, "reftmp");
-    } else {
-      throw string("Invalid unary expression, expression is not a variable");
-    }
+    // create pointer to value
+    return ctx.builder->get()->CreateAlloca(expr_val->getType());
+  case lexer::op_deref:
+    
   default:
     throw string("Invalid unary expression, operator not supported (" +
                  string(lexer::OperatorToken(op)) + ")");
@@ -323,7 +321,7 @@ IfExpression::operator string() const {
 Value *IfExpression::codegen(codegen::CGContext &ctx) {
   Value *cond = condition->codegen(ctx);
   if (cond == nullptr) {
-    throw runtime_error("Invalid if expression: condition is null");
+    throw string("Invalid if expression: condition is null");
   }
 
   // convert condition to a bool by comparing equal to 0
@@ -350,7 +348,7 @@ Value *IfExpression::codegen(codegen::CGContext &ctx) {
   }
 
   if (then_val == nullptr) {
-    throw runtime_error("Invalid if expression: then expression is null");
+    throw string("Invalid if expression: then expression is null");
   }
 
   // create an unconditional branch to the merge block and insert it
@@ -411,7 +409,7 @@ Value *WhileExpression::codegen(codegen::CGContext &ctx) {
 
   Value *cond = condition->codegen(ctx);
   if (cond == nullptr) {
-    throw runtime_error("Invalid while expression: condition is null");
+    throw string("Invalid while expression: condition is null");
   }
 
   // convert condition to a bool by comparing equal to 0
@@ -474,7 +472,7 @@ Primitive primitive_from_type(Type *type) {
   } else if (type->isIntegerTy(1)) {
     return primitive_bool;
   } else {
-    throw runtime_error("Unknown primitive type");
+    throw string("Unknown primitive type");
   }
 }
 

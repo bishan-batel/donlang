@@ -18,6 +18,8 @@ namespace parser {
     bool is_curr(TokenType);
     bool is_keyword(Keyword);
     bool is_op(lexer::Operator);
+    void require_keyword(Keyword);
+    void require_op(lexer::Operator);
 
     Token* advance();
     unique_ptr<ast::Prototype> parse_prototype();

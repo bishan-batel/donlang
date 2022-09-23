@@ -11,6 +11,8 @@ DONLANG_SOURCE=main.don
 DONLANG_LL_OUT = $(CMAKE_BUILD_DIR)/$(DONLANG_SOURCE:.don=.ll)
 DONLANG_EXECUTABLE = $(CMAKE_BUILD_DIR)/$(DONLANG_SOURCE:.don=.out)
 
+CLANG_FLAGS=-lm 
+
 # silence the the output when changing directories
 MAKEFLAGS += --no-print-directory
 
@@ -28,7 +30,7 @@ build:
 
 don:
 	$(DONLANG_COMPILER) $(DONLANG_COMPILE_FLAGS) -o $(DONLANG_LL_OUT) $(DONLANG_SOURCE)
-	clang $(DONLANG_LL_OUT) -lm -o $(DONLANG_EXECUTABLE)
+	clang $(DONLANG_LL_OUT) $(CLANG_FLAGS) -o $(DONLANG_EXECUTABLE)
 
 don-reload: don don-run
 

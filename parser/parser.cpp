@@ -29,13 +29,25 @@ bool Parser::is_keyword(lexer::Keyword keyword) {
          ((KeywordToken *)currTok)->word == keyword;
 }
 
+void Parser::require_keyword(lexer::Keyword key) {
+  if (!is_keyword(key)) {
+    err_unexpected_tok(string(KeywordToken(key)));
+  }
+}
+
 bool Parser::is_op(lexer::Operator op) {
   return is_curr(lexer::tok_op) && ((OperatorToken *)currTok)->op == op;
 }
 
+void Parser::require_op(lexer::Operator op) {
+  if (!is_op(op)) {
+    err_unexpected_tok(string(OperatorToken(op)));
+  }
+}
+
 inline void Parser::err_unexpected_tok(const string &unexpected) {
-  throw runtime_error("Unexpected Token, expected '" + unexpected +
-                      "', found '" + string(*currTok) + '\'');
+  throw string("Unexpected Token, expected '" + unexpected + "', found '" +
+               string(*currTok) + '\'');
 }
 
 unique_ptr<ast::Expression> Parser::parse_extern() {
@@ -66,7 +78,7 @@ unique_ptr<ast::Expression> Parser::parse_function() {
 
   auto proto = parse_prototype();
   if (proto == nullptr)
-    throw runtime_error("Unable to parse function signature");
+    throw string("Unable to parse function signature");
 
   // multiline functions
 
@@ -139,7 +151,7 @@ unique_ptr<ast::Expression> Parser::parse_control_if() {
       continue;
     }
 
-    throw runtime_error("Unexpected Token, '" + string(*currTok) + '\'');
+    throw string("Unexpected Token, '" + string(*currTok) + '\'');
   }
   advance();
 
@@ -174,7 +186,7 @@ vector<unique_ptr<ast::Expression>> Parser::parse_control_else() {
       continue;
     }
 
-    throw runtime_error("Unexpected Token, '" + string(*currTok) + '\'');
+    throw string("Unexpected Token, '" + string(*currTok) + '\'');
   }
   advance();
 
@@ -220,8 +232,7 @@ unique_ptr<ast::Expression> Parser::parse_var_def() {
   advance();
 
   if (!is_curr(lexer::tok_identifier)) {
-    throw runtime_error("Expected variable name, found '" + string(*currTok) +
-                        '\'');
+    throw string("Expected variable name, found '" + string(*currTok) + '\'');
   }
 
   auto ident = ((lexer::IdentifierToken *)currTok)->ident;
@@ -368,7 +379,6 @@ unique_ptr<ast::Expression> Parser::parse_exppression_factor() {
     advance();
     return make_unique<ast::CallExpression>(val, std::move(args));
   } else if (is_op(lexer::op_minus)) {
-    // Unary minus
     advance();
     return make_unique<ast::UnaryExpression>(lexer::op_minus,
                                              parse_exppression_factor());
@@ -378,11 +388,14 @@ unique_ptr<ast::Expression> Parser::parse_exppression_factor() {
     return make_unique<ast::UnaryExpression>(lexer::op_not,
                                              parse_exppression_factor());
   } else if (is_keyword(lexer::keyword_ref)) {
-    // Unary dereference
     advance();
     return make_unique<ast::UnaryExpression>(lexer::op_ref,
                                              parse_exppression_factor());
-  } else if (is_op(lexer::op_openparen)) {
+  } else if (is_keyword(lexer::keyword_deref)) {
+    advance();
+    return make_unique<ast::UnaryExpression>(lexer::op_deref,
+                                             parse_exppression_factor());
+  }else if (is_op(lexer::op_openparen)) {
     advance();
     auto expr = parse_expression();
     if (!is_op(lexer::op_closeparen)) {
@@ -425,7 +438,7 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
     advance();
 
     if (!is_curr(lexer::tok_keyword)) {
-      throw runtime_error("Unexpected variable type: " + string(*currTok));
+      throw string("Unexpected variable type: " + string(*currTok));
     }
 
     args.emplace_back(argname, parse_type());
@@ -433,17 +446,10 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
     if (is_op(lexer::op_comma)) {
       advance();
 
-      if (is_op(lexer::op_dot)) {
-        for (int i = 0; i < 2; i++) {
-          if (!is_op(lexer::op_dot)) {
-            err_unexpected_tok("identifier");
-          };
-          advance();
-        }
-        advance();
+      if (is_keyword(lexer::keyword_varargs)) {
         varargs = true;
+        advance();
       }
-
     } else {
       break;
     }
@@ -510,27 +516,22 @@ ast::Primitive Parser::parse_type() {
 }
 
 vector<unique_ptr<ast::Expression>> Parser::parse() {
-  try {
-    vector<unique_ptr<ast::Expression>> expressions;
+  vector<unique_ptr<ast::Expression>> expressions;
 
-    while (!is_curr(lexer::tok_eof)) {
-      unique_ptr<ast::Expression> expr;
+  while (!is_curr(lexer::tok_eof)) {
+    unique_ptr<ast::Expression> expr;
 
-      if ((expr = parse_function()) != nullptr) {
-        expressions.push_back(std::move(expr));
+    if ((expr = parse_function()) != nullptr) {
+      expressions.push_back(std::move(expr));
 
-      } else if ((expr = parse_extern()) != nullptr) {
-        expressions.push_back(std::move(expr));
-      } else {
-        throw runtime_error("Unknown token: " + string(*currTok));
-      }
+    } else if ((expr = parse_extern()) != nullptr) {
+      expressions.push_back(std::move(expr));
+    } else {
+      throw string("Unknown token: " + string(*currTok));
     }
-
-    return expressions;
-  } catch (string err) {
-    cout << "[PARSER ERROR]: " << err << endl;
-    return {};
   }
+
+  return expressions;
 }
 
 ast::Primitive keyword_to_primitive(Keyword word, bool isptr) {

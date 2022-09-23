@@ -36,6 +36,7 @@ enum Keyword : char {
   // pointers / casting
   keyword_ptr,
   keyword_ref,
+  keyword_deref,
   keyword_as,
 
   // Control Flow
@@ -82,7 +83,8 @@ static const map<string, Keyword> KEYWORD_MAP{
     {"data", keyword_data},     {"constructor", keyword_constructor},
     {"self", keyword_self},     {"package", keyword_package},
     {"import", keyword_import}, {"export", keyword_export},
-    {"from", keyword_from},     {"multiple", keyword_varargs}};
+    {"from", keyword_from},     {"varargs", keyword_varargs},
+    {"deref", keyword_deref}};
 
 enum Operator : char {
   op_invalid = -1,
@@ -109,6 +111,7 @@ enum Operator : char {
   op_less_than,
   op_ptr,
   op_ref,
+  op_deref,
   op_equal,
   op_and,
   op_or,

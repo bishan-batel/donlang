@@ -6,6 +6,7 @@
 #include <lexer/lexer.h>
 #include <llvm/Analysis/LoopInfo.h>
 #include <llvm/Bitcode/BitcodeWriter.h>
+#include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/MCJIT.h>
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
 #include <llvm/IR/Function.h>
@@ -16,6 +17,7 @@
 #include <llvm/Pass.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/Error.h>
+#include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
 #include <parser/parser.h>
 #include <sstream>
@@ -33,13 +35,21 @@ static cl::opt<std::string> InputFileName(cl::Positional,
 static cl::opt<std::string> OutputFileName("o", cl::desc("<output ll file>"),
                                            cl::init("a.ll"));
 
-int main(int nargs, const char *argv[]) {
-  // init CL
-  llvm::cl::ParseCommandLineOptions(nargs, argv, "Donlang Compiler");
+static cl::opt<bool> JIT("jit", cl::desc("Runs file with JIT"),
+                         cl::init(false));
 
-  if (InputFileName == "") {
+int main(int nargs, const char *argv[]) {
+  errs().enable_colors(true);
+  outs().enable_colors(true);
+
+  // init CL
+  cl::ParseCommandLineOptions(nargs, argv, "Donlang Compiler");
+
+  // change LLVM errs
+
+  if (InputFileName.empty()) {
     errs() << "No input file specified, use --help see options\n";
-    abort();
+    return 1;
   }
 
   // check if exists
@@ -54,12 +64,21 @@ int main(int nargs, const char *argv[]) {
   lexer::Lexer lexer(contents);
   lexer.tokenize();
 
-  auto ast = parser::Parser(lexer.getTokens()).parse();
+  vector<unique_ptr<parser::ast::Expression>> ast;
+  try {
+    ast = parser::Parser(lexer.getTokens()).parse();
+  } catch (string ex) {
+    errs().changeColor(errs().RED) << "[PARSER ERROR] " << ex << '\n';
+    errs().resetColor();
+    return 1;
+  }
 
   // print out the first element (a function)'s prototype
   auto llvm_ctx = make_unique<llvm::LLVMContext>();
   auto irbuilder = make_unique<llvm::IRBuilder<>>(*llvm_ctx);
   auto module = make_unique<llvm::Module>("JIT", *llvm_ctx);
+  module->setTargetTriple(LLVMGetDefaultTargetTriple());
+  module->setSourceFileName(InputFileName);
 
   auto ctx = codegen::CGContext(llvm_ctx, irbuilder, module);
 
@@ -69,7 +88,8 @@ int main(int nargs, const char *argv[]) {
       expr->codegen(ctx);
     }
   } catch (string ex) {
-    cout << "[ERROR CODEGEN]: " << ex << endl;
+    errs().changeColor(errs().RED) << ex << "\n";
+    errs().resetColor();
     return 1;
   }
 
@@ -77,12 +97,17 @@ int main(int nargs, const char *argv[]) {
     module->print(llvm::outs(), nullptr);
   }
 
-  // TODO remove
-  module->setTargetTriple("x86_64-pc-linux-gnu");
+  // set target triple
+
+  if (JIT) {
+    // error: unsupported
+
+    errs().changeColor(errs().RED) << "JIT not supported yet :(\n";
+    errs().resetColor();
+    return 1;
+  }
 
   std::error_code ec;
   llvm::raw_fd_stream outfile(OutputFileName, ec);
   llvm::WriteBitcodeToFile(*module, outfile);
-
-  return 0;
 }

@@ -1,49 +1,16 @@
-package main 
+extern printf(fstr: string, varargs): i32
+extern scanf(fstr: string, varargs): i32
 
-extern printf(fstr: string, ...): i32
-extern scanf(fstr: string, ...): i32
-
-def fizzbuzz(limit: i32) {
-  let n = 0
-  while n < limit {
-    n = n + 1
-
-    let fizz = n % 3 is 0
-    let buzz = n % 5 is 0
-
-
-    if fizz and buzz {
-      printf("FizzBuzz")
-    } else if fizz {
-      printf("Fizz")
-    } else if buzz {
-      printf("Buzz")
-    } else {
-      printf("%d", n)
-    }
-
-    printf("\n")
-  }
-}
-
-def quarts_to_gallons() {
-  let quarts = 0
-  
-  printf("Enter quarts: ")
-  scanf("%d", ref quarts)
-  printf("%d quarts is %d gallons and %d quarts\n", quarts, quarts / 4, quarts % 4)
+def change(a: ptr i32) {
+	#printf("a = %d", deref a)
 }
 
 def main(): i32 {
-  #fizzbuzz(100)
-  printf("%d");
+	printf("huh\n")
 
+	let a = 5
+	#let b = ref a
+	change(ref a)
 
-  let a = 0
-  # get reference to a and store it to variable b 
-  let b = ref a
-
-
-  #quarts_to_gallons()
-  return 0
+	return 0
 }

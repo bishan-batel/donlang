@@ -57,9 +57,7 @@ void Lexer::tokenize() {
     if (op())
       continue;
 
-    // cerr << "Invalid Character: '" << currentChar() << "'" << endl;
-    throw runtime_error(string("Unexpected Character '") + currentChar() +
-                        '\'');
+    throw string("Unexpected Character '") + currentChar() + '\'';
     // throw -1;
   }
   tokens.push_back(new EOFToken());

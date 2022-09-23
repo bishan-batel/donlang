@@ -21,6 +21,8 @@ Value *ClassDefinition::codegen(codegen::CGContext &ctx) {
 
   struct_type->setBody(primitive_to_type(ctx, Primitive::primitive_void));
   struct_type->setName(name);
+
+  return nullptr;
 }
 
   //return struct_type;
