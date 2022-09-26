@@ -26,7 +26,10 @@ cmake:
 
 
 build:
-	cmake --build $(CMAKE_OUTPUT_DIR) -j$(NUM_THREADS)
+	cmake --build $(CMAKE_OUTPUT_DIR) -j $(NUM_THREADS) -- -j $(NUM_THREADS)
+
+build-release:
+	cmake --build $(CMAKE_OUTPUT_DIR) -j $(NUM_THREADS) --config Release -- -j $(NUM_THREADS)
 
 don:
 	$(DONLANG_COMPILER) $(DONLANG_COMPILE_FLAGS) -o $(DONLANG_LL_OUT) $(DONLANG_SOURCE)
