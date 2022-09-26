@@ -493,14 +493,11 @@ ast::Primitive Parser::parse_type() {
   return valtype;
 }
 
-unique_ptr<ast::Expression> Parser::parse_class_attr() {
-}
+unique_ptr<ast::Expression> Parser::parse_class_attr() {}
 
-unique_ptr<ast::Expression> Parser::parse_class_method() {
-}
+unique_ptr<ast::Expression> Parser::parse_class_method() {}
 
-unique_ptr<ast::Expression> Parser::parse_class() {
-}
+unique_ptr<ast::Expression> Parser::parse_class() {}
 
 vector<unique_ptr<ast::Expression>> Parser::parse() {
   vector<unique_ptr<ast::Expression>> expressions;
@@ -524,7 +521,6 @@ vector<unique_ptr<ast::Expression>> Parser::parse() {
 ast::Primitive keyword_to_primitive(Keyword word, bool isptr) {
   ast::Primitive prim;
 
-  cout << string(KeywordToken(word)) << endl;
   switch (word) {
   case lexer::keyword_f64:
     prim = ast::primitive_f64;
