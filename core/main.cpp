@@ -61,17 +61,20 @@ int main(int nargs, const char *argv[]) {
 
   string contents = stream.str();
 
+  cout << "Token" << endl;
   lexer::Lexer lexer(contents);
   lexer.tokenize();
 
   vector<unique_ptr<parser::ast::Expression>> ast;
+  cout << "Parse" << endl;
   try {
     ast = parser::Parser(lexer.getTokens()).parse();
   } catch (string ex) {
     errs().changeColor(errs().RED) << "[PARSER ERROR] " << ex << '\n';
     errs().resetColor();
-    return 1;
+    exit(1);
   }
+  cout << "Codegen" << endl;
 
   // print out the first element (a function)'s prototype
   auto llvm_ctx = make_unique<llvm::LLVMContext>();

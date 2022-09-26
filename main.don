@@ -1,16 +1,24 @@
 extern printf(fstr: string, varargs): i32
 extern scanf(fstr: string, varargs): i32
-
-def change(a: ptr i32) {
-	#printf("a = %d", deref a)
-}
+extern malloc(size: i32): ptr i32
+extern free(p: ptr i32)
 
 def main(): i32 {
-	printf("huh\n")
+	printf("Hello World\n")
 
-	let a = 5
-	#let b = ref a
-	change(ref a)
+	let i = 0
 
+	while i < 100 {
+		i = i + 1
+		printf("%d", i)
+
+		if 0 is i % 10 { 
+			printf("\n")
+		} else {
+			printf(", ")
+		}
+		
+
+	}
 	return 0
 }

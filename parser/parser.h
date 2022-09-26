@@ -25,6 +25,9 @@ namespace parser {
     unique_ptr<ast::Prototype> parse_prototype();
     unique_ptr<ast::Expression> parse_function();
     unique_ptr<ast::Expression> parse_extern();
+    unique_ptr<ast::Expression> parse_class_method();
+    unique_ptr<ast::Expression> parse_class_attr();
+    unique_ptr<ast::Expression> parse_class();
 
     unique_ptr<ast::Expression> parse_inner_function();
     unique_ptr<ast::Expression> parse_control_if();

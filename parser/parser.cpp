@@ -329,10 +329,9 @@ unique_ptr<ast::Expression> Parser::parse_expression_cast() {
 
   while (is_keyword(keyword_as)) {
     advance();
-    auto prim = parser::keyword_to_primitive(
-        ((lexer::KeywordToken *)currTok)->word, false);
-    node = make_unique<ast::CastExpression>(std::move(node), prim);
-    advance();
+
+    auto ty = parse_type();
+    node = make_unique<ast::CastExpression>(std::move(node), ty);
   }
   return node;
 }
@@ -395,7 +394,7 @@ unique_ptr<ast::Expression> Parser::parse_exppression_factor() {
     advance();
     return make_unique<ast::UnaryExpression>(lexer::op_deref,
                                              parse_exppression_factor());
-  }else if (is_op(lexer::op_openparen)) {
+  } else if (is_op(lexer::op_openparen)) {
     advance();
     auto expr = parse_expression();
     if (!is_op(lexer::op_closeparen)) {
@@ -484,35 +483,23 @@ ast::Primitive Parser::parse_type() {
   }
 
   // reads value type
-  ast::Primitive valtype;
-
-  switch (((KeywordToken *)currTok)->word) {
-  case lexer::keyword_f64:
-    valtype = ast::primitive_f64;
-    break;
-  case lexer::keyword_f32:
-    valtype = ast::primitive_f32;
-    break;
-  case lexer::keyword_i32:
-    valtype = ast::primitive_i32;
-    break;
-  case lexer::keyword_char:
-    valtype = ast::primitive_char;
-    break;
-  case lexer::keyword_string:
-    valtype = ast::primitive_string;
-    break;
-  case lexer::keyword_void:
-    valtype = ast::primitive_void;
-  default:
-    return ast::Primitive::primitive_invalid;
-  }
+  ast::Primitive valtype =
+      keyword_to_primitive(((lexer::KeywordToken *)currTok)->word, isPtr > 0);
   advance();
 
   if (isPtr) {
     valtype = ast::primitive_to_ptr(valtype);
   }
   return valtype;
+}
+
+unique_ptr<ast::Expression> Parser::parse_class_attr() {
+}
+
+unique_ptr<ast::Expression> Parser::parse_class_method() {
+}
+
+unique_ptr<ast::Expression> Parser::parse_class() {
 }
 
 vector<unique_ptr<ast::Expression>> Parser::parse() {
@@ -537,6 +524,7 @@ vector<unique_ptr<ast::Expression>> Parser::parse() {
 ast::Primitive keyword_to_primitive(Keyword word, bool isptr) {
   ast::Primitive prim;
 
+  cout << string(KeywordToken(word)) << endl;
   switch (word) {
   case lexer::keyword_f64:
     prim = ast::primitive_f64;
