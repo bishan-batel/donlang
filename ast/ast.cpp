@@ -243,7 +243,7 @@ Value *parser::ast::UnaryExpression::codegen(codegen::CGContext &ctx) {
     // create pointer to value
     return ctx.builder->get()->CreateAlloca(expr_val->getType());
   case lexer::op_deref:
-    
+
   default:
     throw string("Invalid unary expression, operator not supported (" +
                  string(lexer::OperatorToken(op)) + ")");
@@ -572,8 +572,8 @@ Value *Function::codegen(codegen::CGContext &ctx) {
     // ctx.namedValues[arg.getName().str()] = &arg;
 
     // create an alloca for this variable
-    AllocaInst *alloca = ctx.builder->get()->CreateAlloca(
-        arg.getType(), 0, arg.getName().str().c_str());
+    AllocaInst *alloca =
+        ctx.builder->get()->CreateAlloca(arg.getType(), 0, arg.getName());
 
     // store the initial value into the alloca
     ctx.builder->get()->CreateStore(&arg, alloca);

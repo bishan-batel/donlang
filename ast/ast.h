@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lexer/token.h"
+#include "types.h"
 #include <iostream>
 #include <lexer/token.h>
 #include <llvm/ADT/APInt.h>
@@ -306,7 +307,15 @@ public:
 llvm::Type *primitive_to_type(codegen::CGContext &ctx, Primitive prim);
 Primitive primitive_from_type(Type *type);
 
-// Classes
+/**
+ * Classes
+ */
+
+enum ClassFlags {
+  CF_PUBLIC = 1 << 0,
+  CF_STATIC = 1 << 1,
+};
+
 class ClassDefinition : public Expression {
   string name;
   vector<unique_ptr<Expression>> body;
@@ -319,13 +328,29 @@ public:
   Value *codegen(codegen::CGContext &ctx) override;
 };
 
+class ClassMethod : public Expression {
+public:
+  int flags = 0;
+  unique_ptr<Prototype> proto;
+  vector<unique_ptr<Expression>> body;
+
+  ClassMethod(int flags, unique_ptr<Prototype> proto,
+              vector<unique_ptr<Expression>> body);
+
+  explicit operator string() const override;
+
+  Value *codegen(codegen::CGContext &ctx) override;
+};
+
 class ClassAttribute : public Expression {
+public:
   string name;
   unique_ptr<Expression> expression;
+  int flags;
   Primitive type;
 
-public:
-  ClassAttribute(string name, unique_ptr<Expression> expression);
+  ClassAttribute(int flags, string name, Primitive type,
+                 unique_ptr<Expression> expression);
 
   explicit operator string() const override;
 
@@ -334,10 +359,13 @@ public:
 
 class ClassConstructor : public Expression {
   string name;
-  vector<unique_ptr<Expression>> args;
+  int flags;
+  vector<unique_ptr<Primitive>> args;
+  vector<unique_ptr<Expression>> body;
 
 public:
-  ClassConstructor(string name, vector<unique_ptr<Expression>> args);
+  ClassConstructor(string name, vector<unique_ptr<Primitive>> args,
+                   vector<unique_ptr<Expression>> body);
 
   explicit operator string() const override;
 

@@ -29,10 +29,13 @@ bool Parser::is_keyword(lexer::Keyword keyword) {
          ((KeywordToken *)currTok)->word == keyword;
 }
 
+bool Parser::is_identifier() { return is_curr(lexer::tok_identifier); }
+
 void Parser::require_keyword(lexer::Keyword key) {
   if (!is_keyword(key)) {
     err_unexpected_tok(string(KeywordToken(key)));
   }
+  advance();
 }
 
 bool Parser::is_op(lexer::Operator op) {
@@ -43,6 +46,16 @@ void Parser::require_op(lexer::Operator op) {
   if (!is_op(op)) {
     err_unexpected_tok(string(OperatorToken(op)));
   }
+  advance();
+}
+
+string Parser::require_identifier() {
+  if (!is_identifier()) {
+    err_unexpected_tok("identifier");
+  }
+  auto ident = ((IdentifierToken *)currTok)->ident;
+  advance();
+  return ident;
 }
 
 inline void Parser::err_unexpected_tok(const string &unexpected) {
@@ -82,10 +95,7 @@ unique_ptr<ast::Expression> Parser::parse_function() {
 
   // multiline functions
 
-  if (!is_op(lexer::op_opencurly)) {
-    err_unexpected_tok("{");
-  }
-  advance();
+  require_op(lexer::op_opencurly);
 
   vector<unique_ptr<ast::Expression>> body;
   while (!is_op(lexer::op_closecurly)) {
@@ -137,10 +147,7 @@ unique_ptr<ast::Expression> Parser::parse_control_if() {
 
   auto expr = parse_expression();
 
-  if (!is_op(lexer::op_opencurly)) {
-    err_unexpected_tok("{");
-  }
-  advance();
+  require_op(lexer::op_opencurly);
 
   vector<unique_ptr<ast::Expression>> body;
   while (!is_op(lexer::op_closecurly)) {
@@ -170,14 +177,9 @@ vector<unique_ptr<ast::Expression>> Parser::parse_control_else() {
     body.push_back(parse_control_if());
     return body;
   }
-
-  if (!is_op(lexer::op_opencurly)) {
-    err_unexpected_tok("{");
-  }
-  advance();
+  require_op(lexer::op_opencurly);
 
   vector<unique_ptr<ast::Expression>> body;
-
   while (!is_op(lexer::op_closecurly)) {
     unique_ptr<ast::Expression> expr = parse_inner_function();
 
@@ -201,10 +203,7 @@ unique_ptr<ast::Expression> Parser::parse_control_while() {
 
   auto expr = parse_expression();
 
-  if (!is_op(lexer::op_opencurly)) {
-    err_unexpected_tok("{");
-  }
-  advance();
+  require_op(lexer::op_opencurly);
 
   vector<unique_ptr<ast::Expression>> body;
   while (!is_op(lexer::op_closecurly)) {
@@ -231,12 +230,7 @@ unique_ptr<ast::Expression> Parser::parse_var_def() {
   }
   advance();
 
-  if (!is_curr(lexer::tok_identifier)) {
-    throw string("Expected variable name, found '" + string(*currTok) + '\'');
-  }
-
-  auto ident = ((lexer::IdentifierToken *)currTok)->ident;
-  advance();
+  auto ident = require_identifier();
 
   if (is_op(lexer::op_assign)) {
     advance();
@@ -397,10 +391,7 @@ unique_ptr<ast::Expression> Parser::parse_exppression_factor() {
   } else if (is_op(lexer::op_openparen)) {
     advance();
     auto expr = parse_expression();
-    if (!is_op(lexer::op_closeparen)) {
-      err_unexpected_tok(")");
-    }
-    advance();
+    require_op(lexer::op_closeparen);
     return std::move(expr);
   } else {
     err_unexpected_tok("expression");
@@ -409,20 +400,11 @@ unique_ptr<ast::Expression> Parser::parse_exppression_factor() {
 }
 
 unique_ptr<ast::Prototype> Parser::parse_prototype() {
-  if (!is_curr(lexer::tok_identifier)) {
-    err_unexpected_tok("function name");
-  }
-
-  auto name = string(((IdentifierToken *)currTok)->ident);
-
-  advance();
-  if (!is_op(lexer::op_openparen)) {
-    err_unexpected_tok("(");
-  }
+  auto name = require_identifier();
+  require_op(lexer::op_openparen);
 
   vector<tuple<string, ast::Primitive>> args;
   // read each argument
-  advance();
 
   bool varargs = false;
   while (!varargs && is_curr(lexer::tok_identifier)) {
@@ -430,11 +412,7 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
     auto argname = ((IdentifierToken *)currTok)->ident;
 
     advance();
-    if (!is_op(lexer::op_colon)) {
-      err_unexpected_tok(":");
-    }
-
-    advance();
+    require_op(lexer::op_colon);
 
     if (!is_curr(lexer::tok_keyword)) {
       throw string("Unexpected variable type: " + string(*currTok));
@@ -453,11 +431,7 @@ unique_ptr<ast::Prototype> Parser::parse_prototype() {
       break;
     }
   }
-  if (!is_op(lexer::op_closeparen)) {
-    err_unexpected_tok(")");
-  }
-  advance();
-
+  require_op(lexer::op_closeparen);
   ast::Primitive returntype = ast::primitive_void;
 
   if (is_op(lexer::op_colon)) {
@@ -493,22 +467,110 @@ ast::Primitive Parser::parse_type() {
   return valtype;
 }
 
-unique_ptr<ast::Expression> Parser::parse_class_attr() {}
+unique_ptr<ast::Expression> Parser::parse_class_attr(int flags) {
+  if (!is_curr(lexer::tok_identifier)) {
+    return nullptr;
+  }
 
-unique_ptr<ast::Expression> Parser::parse_class_method() {}
+  auto name = string(((IdentifierToken *)currTok)->ident);
+  advance();
 
-unique_ptr<ast::Expression> Parser::parse_class() {}
+  require_op(lexer::op_colon);
+
+  if (!is_curr(lexer::tok_keyword)) {
+    throw string("Unexpected variable type: " + string(*currTok));
+  }
+
+  auto type = parse_type();
+
+  if (is_op(lexer::op_assign)) {
+    advance();
+    auto expr = parse_expression();
+    return make_unique<ast::ClassAttribute>(flags, name, type, std::move(expr));
+  } else {
+    return make_unique<ast::ClassAttribute>(flags, name, type, nullptr);
+  }
+}
+
+unique_ptr<ast::Expression> Parser::parse_class_method(int flags) {
+  if (!is_keyword(lexer::keyword_def)) {
+    return nullptr;
+  }
+  advance();
+
+  auto proto = parse_prototype();
+
+  require_op(lexer::op_opencurly);
+
+  vector<unique_ptr<ast::Expression>> body;
+
+  while (!is_op(lexer::op_closecurly)) {
+    body.push_back(parse_inner_function());
+  }
+  advance();
+  return make_unique<ast::ClassMethod>(flags, std::move(proto),
+                                       std::move(body));
+}
+
+unique_ptr<ast::Expression> Parser::parse_class_constructor(int flags) {
+  return nullptr;
+}
+
+unique_ptr<ast::Expression> Parser::parse_class() {
+  if (!is_keyword(lexer::keyword_class)) {
+    return nullptr;
+  }
+  advance();
+
+  auto name = require_identifier();
+
+  require_op(lexer::op_opencurly);
+
+  vector<unique_ptr<ast::Expression>> members;
+
+  while (!is_op(lexer::op_closecurly)) {
+    unique_ptr<ast::Expression> expr;
+    int flags = 0;
+
+    if (is_keyword(lexer::keyword_public)) {
+      flags |= ast::CF_PUBLIC;
+      advance();
+    } else if (is_keyword(lexer::keyword_private)) {
+      advance();
+    }
+
+    if (is_keyword(lexer::keyword_static)) {
+      flags |= ast::CF_STATIC;
+      advance();
+    }
+
+    if ((expr = parse_class_attr(flags))) {
+      members.push_back(std::move(expr));
+    } else if ((expr = parse_class_method(flags))) {
+      members.push_back(std::move(expr));
+    } else if ((expr = parse_class_constructor(flags))) {
+      members.push_back(std::move(expr));
+    } else {
+      err_unexpected_tok("class member");
+    }
+  }
+  advance();
+
+  return make_unique<ast::ClassDefinition>(name, std::move(members));
+}
 
 vector<unique_ptr<ast::Expression>> Parser::parse() {
   vector<unique_ptr<ast::Expression>> expressions;
 
+  // HIGH LEVEL EXPRESSION
   while (!is_curr(lexer::tok_eof)) {
     unique_ptr<ast::Expression> expr;
 
     if ((expr = parse_function()) != nullptr) {
       expressions.push_back(std::move(expr));
-
     } else if ((expr = parse_extern()) != nullptr) {
+      expressions.push_back(std::move(expr));
+    } else if ((expr = parse_class()) != nullptr) {
       expressions.push_back(std::move(expr));
     } else {
       throw string("Unknown token: " + string(*currTok));

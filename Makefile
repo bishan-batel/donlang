@@ -4,8 +4,8 @@ CMAKE_OUTPUT_DIR=target
 CMAKE_BUILD_DIR=$(CMAKE_OUTPUT_DIR)/build
 
 DONLANG_COMPILER=$(CMAKE_BUILD_DIR)/donlang
-#DONLANG_COMPILE_FLAGS=-p
-DONLANG_COMPILE_FLAGS=
+DONLANG_COMPILE_FLAGS=-p
+#DONLANG_COMPILE_FLAGS=
 
 DONLANG_SOURCE=main.don
 DONLANG_LL_OUT = $(CMAKE_BUILD_DIR)/$(DONLANG_SOURCE:.don=.ll)
@@ -15,6 +15,7 @@ CLANG_FLAGS=-lm
 
 # silence the the output when changing directories
 MAKEFLAGS += --no-print-directory
+MAKEFLAGS += --silent
 
 all: build
 

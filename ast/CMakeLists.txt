@@ -1,10 +1,12 @@
 add_library(
   ast
-  ast.h
-  ast.cpp
   literals.cpp
-  casting.cpp
   classes.cpp
+  casting.cpp
+  types.h
+  types.cpp
+  ast.cpp
+  ast.h
 )
 
 target_include_directories(ast PUBLIC "${CMAKE_SOURCE_DIR}")

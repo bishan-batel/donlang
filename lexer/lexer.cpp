@@ -81,7 +81,8 @@ bool Lexer::identifier() {
 
   int start = idx;
   int length = 1;
-  while (nextChar() != EOF && utils::is_alphanumeric(currentChar())) {
+  while (nextChar() != EOF &&
+         (currentChar() == '.' || utils::is_alphanumeric(currentChar()))) {
     length++;
   }
 
@@ -209,7 +210,7 @@ char Lexer::escape_char() {
     case '\\':
       return '\\';
     default:
-      throw runtime_error("Invalid escape sequence");
+      throw string("Invalid escape sequence");
     }
   }
   return c;
@@ -222,13 +223,13 @@ bool Lexer::charliteral() {
 
   // read character literal until ' or EOF, parsing escape sequences
   if (nextChar() == EOF) {
-    throw runtime_error("Invalid character literal");
+    throw string("Invalid character literal");
   }
 
   char c = escape_char();
 
   if (currentChar() != '\'') {
-    throw runtime_error("Expected ', found " + string(1, currentChar()));
+    throw string("Expected ', found " + string(1, currentChar()));
   }
   nextChar();
 
