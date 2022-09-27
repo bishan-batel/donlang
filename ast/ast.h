@@ -37,6 +37,7 @@ public:
 
   // named variables
   map<string, AllocaInst *> namedValues;
+  map<string, StructType *> classes;
 
   explicit CGContext(unique_ptr<LLVMContext> &, unique_ptr<IRBuilder<>> &,
                      unique_ptr<Module> &);
