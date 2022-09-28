@@ -1,9 +1,24 @@
 package main 
 
-extern printf(fstr: string, ...): i32
-extern scanf(fstr: string, ...): i32
+extern printf(fstr: string, varargs): i32
+extern scanf(fstr: string, varargs): i32
 
 data Vector2(x: f32, y: f32)
+
+class Vector2 {
+  x: f32
+  y: f32
+
+  pub constructor(x: f32, y: f32) {
+    self.x = x
+    self.y = y
+    printf("bruh moment\n")
+  }
+
+  pub def to_string(): string {
+    return "(" + self.x + ", " + self. + y + ")"
+  }
+}
 
 def fizzbuzz(limit: i32) {
   let n = 0
@@ -12,7 +27,6 @@ def fizzbuzz(limit: i32) {
 
     let fizz = n % 3 is 0
     let buzz = n % 5 is 0
-
 
     if fizz and buzz {
       printf("FizzBuzz")

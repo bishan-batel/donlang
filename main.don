@@ -8,6 +8,7 @@ class Person {
 	pub age: i32
 
 	def speak() {
+		self.bruh()
 		printf("Hello, my name is %s and I am %d years old"#:TODO:#)
 	}
 
@@ -18,5 +19,7 @@ class Person {
 
 def main(): i32 {
 	Person.bruh()
+	
+	let self = ""
 	return 0
 }

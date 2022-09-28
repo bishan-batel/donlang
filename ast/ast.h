@@ -268,9 +268,10 @@ public:
   string name;
   Primitive returntype;
   vector<tuple<string, Primitive>> args;
+  bool varargs;
 
   Prototype(string name, Primitive returntype,
-            vector<tuple<string, Primitive>> args);
+            vector<tuple<string, Primitive>> args, bool varargs);
 
   ~Prototype();
 
