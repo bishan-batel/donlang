@@ -513,7 +513,56 @@ unique_ptr<ast::Expression> Parser::parse_class_method(int flags) {
 }
 
 unique_ptr<ast::Expression> Parser::parse_class_constructor(int flags) {
-  return nullptr;
+  if (!is_keyword(lexer::keyword_constructor)) {
+    return nullptr;
+  }
+  advance();
+
+  // parser arguments
+  require_op(lexer::op_openparen);
+
+  vector<tuple<string, ast::Primitive>> args;
+  // read each argument
+
+  bool varargs = false;
+
+  while (!varargs && is_curr(lexer::tok_identifier)) {
+
+    auto argname = ((IdentifierToken *)currTok)->ident;
+
+    advance();
+    require_op(lexer::op_colon);
+
+    if (!is_curr(lexer::tok_keyword)) {
+      throw string("Unexpected variable type: " + string(*currTok));
+    }
+
+    args.emplace_back(argname, parse_type());
+
+    if (is_op(lexer::op_comma)) {
+      advance();
+
+      if (is_keyword(lexer::keyword_varargs)) {
+        varargs = true;
+        advance();
+      }
+    } else {
+      break;
+    }
+  }
+
+  require_op(lexer::op_closeparen);
+
+  require_op(lexer::op_opencurly);
+  vector<unique_ptr<ast::Expression>> body;
+
+  while (!is_op(lexer::op_closecurly)) {
+    body.push_back(parse_inner_function());
+  }
+  advance();
+
+  return make_unique<ast::ClassConstructor>(flags, args, std::move(body),
+                                            varargs);
 }
 
 unique_ptr<ast::Expression> Parser::parse_class() {

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "lexer/token.h"
-#include "types.h"
 #include <iostream>
 #include <lexer/token.h>
 #include <llvm/ADT/APInt.h>
@@ -45,6 +44,7 @@ public:
   bool isUnsafe();
 };
 }; // namespace codegen
+#include "types.h"
 
 namespace parser::ast {
 
@@ -268,10 +268,9 @@ public:
   string name;
   Primitive returntype;
   vector<tuple<string, Primitive>> args;
-  bool varargs;
 
   Prototype(string name, Primitive returntype,
-            vector<tuple<string, Primitive>> args, bool varargs);
+            vector<tuple<string, Primitive>> args);
 
   ~Prototype();
 
@@ -359,14 +358,14 @@ public:
 };
 
 class ClassConstructor : public Expression {
-  string name;
-  int flags;
-  vector<unique_ptr<Primitive>> args;
-  vector<unique_ptr<Expression>> body;
-
 public:
-  ClassConstructor(string name, vector<unique_ptr<Primitive>> args,
-                   vector<unique_ptr<Expression>> body);
+  int flags;
+  vector<tuple<string, Primitive>> args;
+  vector<unique_ptr<Expression>> body;
+  bool varargs;
+
+  ClassConstructor(int flags, vector<tuple<string, Primitive>> args,
+                   vector<unique_ptr<Expression>> body, bool varargs);
 
   explicit operator string() const override;
 
