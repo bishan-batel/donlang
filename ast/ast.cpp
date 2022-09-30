@@ -50,9 +50,6 @@ VariableExpression::operator string() const { return "variable[" + name + "]"; }
 
 Value *VariableExpression::codegen(codegen::CGContext &ctx) {
   AllocaInst *alloca = ctx.namedValues[name];
-  if (alloca == nullptr) {
-    throw "Unknown variable used: \"" + name + '\"';
-  }
 
   return ctx.builder->get()->CreateLoad(alloca->getAllocatedType(), alloca,
                                         alloca->getName());

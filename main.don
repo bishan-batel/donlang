@@ -7,19 +7,22 @@ class Person {
 	pub name: string
 	pub age: i32
 
-	def speak() {
-		self.bruh()
-		printf("Hello, my name is %s and I am %d years old"#:TODO:#)
+	constructor(name: string, age: i32) {
+		printf("bruh\n")
 	}
 
+	def speak() {
+		printf("Hello, my name is %s and I am %d years old"#:TODO:#)
+	}
+	
 	static def bruh() {
 		printf("huh\n")
 	}
 }
 
 def main(): i32 {
-	Person.bruh()
-	
+	let a = Person("bruh moment", 69)
+
 	let self = ""
 	return 0
 }

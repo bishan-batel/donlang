@@ -364,6 +364,7 @@ public:
   vector<tuple<string, Primitive>> args;
   vector<unique_ptr<Expression>> body;
   bool varargs;
+  llvm::StructType *struct_type;
 
   ClassConstructor(int flags, vector<tuple<string, Primitive>> args,
                    vector<unique_ptr<Expression>> body, bool varargs);

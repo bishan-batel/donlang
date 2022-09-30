@@ -615,11 +615,11 @@ vector<unique_ptr<ast::Expression>> Parser::parse() {
   while (!is_curr(lexer::tok_eof)) {
     unique_ptr<ast::Expression> expr;
 
-    if ((expr = parse_function()) != nullptr) {
+    if ((expr = parse_function())) {
       expressions.push_back(std::move(expr));
-    } else if ((expr = parse_extern()) != nullptr) {
+    } else if ((expr = parse_extern())) {
       expressions.push_back(std::move(expr));
-    } else if ((expr = parse_class()) != nullptr) {
+    } else if ((expr = parse_class())) {
       expressions.push_back(std::move(expr));
     } else {
       throw string("Unknown token: " + string(*currTok));
